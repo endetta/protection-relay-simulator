@@ -1,0 +1,436 @@
+{
+  "checks": 80,
+  "passed": 80,
+  "failed": [],
+  "items": [
+    {
+      "name": "Overcurrent production route registered",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Differential route preserved",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Distance route remains inactive",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Underfrequency route remains inactive",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Homepage Overcurrent path active",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Homepage Differential path active",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Homepage Distance has no path",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Homepage Underfrequency has no path",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Homepage reduced motion considered",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Homepage navigation timer cleanup",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "One authoritative reducer on Overcurrent page",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "OvercurrentParameterPanel composed on production page",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "RadialProtectionDiagram composed on production page",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "TimeCurrentCurve composed on production page",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "OperatingSequence composed on production page",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "OvercurrentAnalysisPanel composed on production page",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Timeline snapshot shared to SLD",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Timeline snapshot shared to Analysis",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Invalid local drafts held at page level",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Header READY semantics before execution",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Header Help present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes 50 vs 51",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes Pickup vs Trip",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes Current multiple",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes TMS / Time Dial",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes Supported curves",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes Primary, backup &amp; CTI",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes Load / minimum-fault window",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes Apply Fault vs Run Coordination Test",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help includes Study-data limitation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help disclaims short-circuit solver",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Help disclaims directional/CT saturation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Shared header Home Link",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Shared header Differential defaults retained",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Shared header live status region",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay semantic dialog",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay Escape close",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay Tab focus trap",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay restores focus",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay locks/restores body scroll",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay focus-visible style",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay thin square scrollbar",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay mobile viewport mode",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overlay reduced motion",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Operating Sequence overall progressbar",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Operating Sequence per-relay progressbar",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Operating Sequence pause/resume",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Operating Sequence device buttons accessible",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "TCC keyboard handler present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "TCC expanded engineering view present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "SLD expanded engineering view present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "SLD fault scrubber present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Analysis blocks invalid draft validation",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Guided challenge card present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Parameter panel supports simulation speed",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Parameter panel supports Clear/Reset workflow controls",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Parameter panel locks during active run",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Global CSS reduced motion exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Global CSS narrow layout breakpoint exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Global CSS medium layout breakpoint exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Global CSS desktop layout breakpoint exists",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Desktop three-column proportions present",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Page Help mobile breakpoint",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "No window.open in production source",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Overcurrent engines do not import React",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "Studies do not import React",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "No inverse curve constant 0.0515 duplicated in React UI",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "No inverse curve constant 19.61 duplicated in React UI",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "No inverse curve constant 28.2 duplicated in React UI",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "No inverse curve constant 13.5 duplicated in React UI",
+      "pass": true,
+      "detail": {
+        "computationalHits": []
+      }
+    },
+    {
+      "name": "No CTI subtraction formula duplicated in React UI",
+      "pass": true,
+      "detail": null
+    },
+    {
+      "name": "CSS braces balanced src/index.css",
+      "pass": true,
+      "detail": {
+        "open": 297,
+        "close": 297
+      }
+    },
+    {
+      "name": "CSS braces balanced src/pages/overcurrentSimulator.css",
+      "pass": true,
+      "detail": {
+        "open": 30,
+        "close": 30
+      }
+    },
+    {
+      "name": "CSS braces balanced src/components/shared/engineeringViewOverlay.css",
+      "pass": true,
+      "detail": {
+        "open": 27,
+        "close": 27
+      }
+    },
+    {
+      "name": "CSS braces balanced src/components/overcurrent/overcurrentParameterPanel.css",
+      "pass": true,
+      "detail": {
+        "open": 83,
+        "close": 83
+      }
+    },
+    {
+      "name": "CSS braces balanced src/components/overcurrent/operatingSequence.css",
+      "pass": true,
+      "detail": {
+        "open": 84,
+        "close": 84
+      }
+    },
+    {
+      "name": "CSS braces balanced src/components/overcurrent/timeCurrentCurve.css",
+      "pass": true,
+      "detail": {
+        "open": 131,
+        "close": 131
+      }
+    },
+    {
+      "name": "CSS braces balanced src/components/overcurrent/guidedChallengeCard.css",
+      "pass": true,
+      "detail": {
+        "open": 45,
+        "close": 45
+      }
+    },
+    {
+      "name": "CSS braces balanced src/components/overcurrent/radialProtectionDiagram.css",
+      "pass": true,
+      "detail": {
+        "open": 100,
+        "close": 100
+      }
+    },
+    {
+      "name": "CSS braces balanced src/components/overcurrent/overcurrentAnalysisPanel.css",
+      "pass": true,
+      "detail": {
+        "open": 104,
+        "close": 104
+      }
+    }
+  ]
+}

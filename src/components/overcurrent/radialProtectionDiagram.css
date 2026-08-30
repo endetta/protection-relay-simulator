@@ -1,0 +1,585 @@
+.overcurrent-sld {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 6px;
+  background: var(--sim-panel-raised);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .018);
+  color: var(--sim-text);
+  padding: 10px;
+}
+
+.overcurrent-sld-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--sim-border);
+  padding: 0 1px 8px;
+}
+
+.overcurrent-sld-header > div:first-child {
+  min-width: 0;
+}
+
+.overcurrent-sld-kicker {
+  display: block;
+  color: var(--sim-accent);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.overcurrent-sld-header h3 {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: var(--sim-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .045em;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.overcurrent-sld-source {
+  display: grid;
+  flex: none;
+  justify-items: end;
+  gap: 2px;
+  max-width: 46%;
+}
+
+.overcurrent-sld-source span {
+  border: 1px solid var(--sim-border);
+  border-radius: 999px;
+  background: var(--sim-header);
+  padding: 1px 5px;
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  line-height: 1.35;
+}
+
+.overcurrent-sld-source[data-tone='danger'] span {
+  border-color: var(--sim-red-border);
+  background: var(--sim-red-bg);
+  color: var(--sim-red);
+}
+
+.overcurrent-sld-source[data-tone='success'] span {
+  border-color: var(--sim-green-border);
+  background: var(--sim-green-bg);
+  color: var(--sim-green);
+}
+
+.overcurrent-sld-source b {
+  overflow: hidden;
+  max-width: 100%;
+  color: var(--sim-text-secondary);
+  font-size: 8.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overcurrent-sld-invalid {
+  display: grid;
+  gap: 3px;
+  margin-top: 10px;
+  border: 1px solid var(--sim-amber);
+  border-left: 3px solid var(--sim-amber);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 8px;
+  color: var(--sim-amber);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.overcurrent-sld-invalid b {
+  color: var(--sim-amber);
+  font-size: 8.5px;
+  letter-spacing: .055em;
+}
+
+.overcurrent-sld-canvas {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin-top: 7px;
+  overflow: hidden;
+  border: 1px solid var(--sim-border-soft);
+  border-radius: 5px;
+  background: var(--sim-bg);
+}
+
+/* Single aspect-ratio box shared by the SVG and the HTML overlay layers, so the
+   device cards and fault tags can never drift out of alignment with the feeder
+   when the canvas grows (Expand overlay, narrow-screen scroll area). */
+.overcurrent-sld-stage {
+  position: relative;
+  flex: none;
+  width: 100%;
+  /* Matches the cropped SVG viewBox (1000 x 162) so the diagram fills the box
+     and no empty band accumulates above the feeder line. */
+  aspect-ratio: 1000 / 162;
+}
+
+.overcurrent-sld-stage > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.overcurrent-sld-feeder,
+.overcurrent-sld-source-symbol circle,
+.overcurrent-sld-source-symbol path,
+.overcurrent-sld-load-symbol,
+.overcurrent-sld-breaker-wire,
+.overcurrent-sld-breaker-blade,
+.overcurrent-sld-breaker-contact,
+.overcurrent-sld-ct,
+.overcurrent-sld-relay-lead {
+  fill: none;
+  stroke: var(--sim-text-muted);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.overcurrent-sld-feeder {
+  stroke: var(--sim-border-strong);
+  stroke-width: 3;
+}
+
+.overcurrent-sld-current-path {
+  fill: none;
+  stroke: var(--sim-green);
+  stroke-dasharray: .065 .035;
+  stroke-linecap: round;
+  stroke-width: 3.5;
+  animation: overcurrent-sld-flow 1.05s linear infinite;
+}
+
+.overcurrent-sld-breaker-blade[data-state='OPENING'] {
+  stroke: var(--sim-amber);
+}
+
+.overcurrent-sld-breaker-blade[data-state='OPEN'] {
+  stroke: var(--sim-red);
+}
+
+.overcurrent-sld-ct {
+  stroke: var(--sim-text-muted);
+}
+
+.overcurrent-sld-relay-lead {
+  stroke: var(--sim-border-strong);
+  stroke-dasharray: 3 4;
+  stroke-width: 1.5;
+}
+
+.overcurrent-sld-equipment-label {
+  fill: var(--sim-text-muted);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+
+.overcurrent-sld-fault-drop {
+  stroke: var(--sim-border);
+  stroke-dasharray: 3 4;
+  stroke-width: 1.4;
+}
+
+.overcurrent-sld-fault-drop[data-active='true'] {
+  stroke: var(--sim-red);
+}
+
+.overcurrent-sld-fault-bolt {
+  fill: var(--sim-text-dim);
+  opacity: .72;
+}
+
+.overcurrent-sld-fault-bolt[data-active='true'] {
+  fill: var(--sim-red);
+  opacity: 1;
+}
+
+.overcurrent-sld-active-fault-ring {
+  fill: none;
+  stroke: var(--sim-red);
+  stroke-dasharray: 3 3;
+  stroke-width: 1.4;
+}
+
+.overcurrent-sld-load-symbol rect {
+  fill: var(--sim-bg);
+}
+
+.overcurrent-sld-device-layer,
+.overcurrent-sld-fault-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.overcurrent-sld-device,
+.overcurrent-sld-fault {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  min-width: 67px;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.overcurrent-sld-device {
+  /* viewBox y 160 of the cropped 88-250 box: (160 - 88) / 162 */
+  top: 44.4%;
+  gap: 1px;
+  border: 1px solid var(--sim-border);
+  border-left: 2px solid var(--sim-border-strong);
+  border-radius: 4px;
+  background: var(--sim-panel);
+  padding: 4px 5px;
+  color: var(--sim-text-secondary);
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.overcurrent-sld-device:hover,
+.overcurrent-sld-device:focus-visible,
+.overcurrent-sld-device[data-selected='true'] {
+  border-color: var(--sim-accent);
+  border-left-color: var(--sim-accent);
+  background: var(--sim-accent-bg);
+  outline: none;
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.overcurrent-sld-device[data-role='PRIMARY'] {
+  border-left-color: var(--sim-green);
+}
+
+.overcurrent-sld-device[data-role='BACKUP'] {
+  border-left-color: var(--sim-amber);
+}
+
+.overcurrent-sld-device[data-breaker='OPEN'],
+.overcurrent-sld-device[data-breaker='OPENING'] {
+  border-right-color: var(--sim-red);
+}
+
+.overcurrent-sld-device-id {
+  color: var(--sim-text);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .055em;
+}
+
+.overcurrent-sld-device-role,
+.overcurrent-sld-device-state {
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 750;
+  letter-spacing: .045em;
+  line-height: 1.25;
+}
+
+.overcurrent-sld-device[data-role='PRIMARY'] .overcurrent-sld-device-role {
+  color: var(--sim-green);
+}
+
+.overcurrent-sld-device[data-role='BACKUP'] .overcurrent-sld-device-role {
+  color: var(--sim-amber);
+}
+
+.overcurrent-sld-device-current {
+  color: var(--sim-text-secondary);
+  font-size: 8.5px;
+  line-height: 1.25;
+}
+
+.overcurrent-sld-device-current small {
+  color: var(--sim-text-dim);
+  font-size: 8.5px;
+}
+
+.overcurrent-sld-fault {
+  /* viewBox y 107.5 of the cropped 88-250 box: (107.5 - 88) / 162 */
+  top: 12%;
+  width: 72px;
+  gap: 1px;
+  border: 0;
+  background: transparent;
+  padding: 18px 2px 2px;
+  color: var(--sim-text-muted);
+  text-align: center;
+}
+
+.overcurrent-sld-fault span {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+}
+
+.overcurrent-sld-fault small {
+  overflow: hidden;
+  font-size: 8.5px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overcurrent-sld-fault:hover,
+.overcurrent-sld-fault:focus-visible,
+.overcurrent-sld-fault[data-active='true'] {
+  color: var(--sim-red);
+  outline: 1px solid var(--sim-red-border);
+  outline-offset: 0;
+}
+
+.overcurrent-sld-fault:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.overcurrent-sld-scrubber {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  border-left: 2px solid var(--sim-border-strong);
+  background: var(--sim-panel);
+  padding: 7px 8px;
+}
+
+.overcurrent-sld-scrubber > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.overcurrent-sld-scrubber b {
+  color: var(--sim-text-secondary);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.overcurrent-sld-scrubber em {
+  flex: none;
+  color: var(--sim-accent);
+  font-size: 9px;
+  font-style: normal;
+}
+
+.overcurrent-sld-scrubber input {
+  width: 100%;
+  accent-color: var(--sim-accent);
+}
+
+.overcurrent-sld-scrubber input:focus-visible {
+  outline: 1px solid var(--sim-accent);
+  outline-offset: 2px;
+}
+
+.overcurrent-sld-scrubber small {
+  color: var(--sim-text-dim);
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+
+.overcurrent-sld-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 13px;
+  margin-top: 8px;
+  border-top: 1px solid var(--sim-border-soft);
+  padding-top: 7px;
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  line-height: 1.2;
+}
+
+.overcurrent-sld-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.overcurrent-sld-legend i {
+  width: 8px;
+  height: 3px;
+  border-radius: 1px;
+  background: var(--sim-border-strong);
+}
+
+.overcurrent-sld-legend i[data-tone='selected'] { background: var(--sim-accent); }
+.overcurrent-sld-legend i[data-tone='primary'] { background: var(--sim-green); }
+.overcurrent-sld-legend i[data-tone='backup'] { background: var(--sim-amber); }
+.overcurrent-sld-legend i[data-tone='fault'],
+.overcurrent-sld-legend i[data-tone='open'] { background: var(--sim-red); }
+
+.overcurrent-profile-current-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--sim-border-soft);
+  padding-top: 5px;
+}
+
+.overcurrent-profile-current-list > span {
+  display: flex;
+  min-width: 0;
+  justify-content: space-between;
+  gap: 5px;
+  color: var(--sim-text-muted);
+}
+
+.overcurrent-profile-current-list b {
+  color: var(--sim-text-secondary);
+  font-size: 8.5px;
+}
+
+@keyframes overcurrent-sld-flow {
+  to { stroke-dashoffset: -.1; }
+}
+
+@media (max-width: 700px) {
+  .overcurrent-sld-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .overcurrent-sld-source {
+    justify-items: start;
+    max-width: none;
+  }
+
+  .overcurrent-sld-canvas {
+    /* Shrink-to-fit so the wider stage overflows into .overcurrent-sld-canvas-scroll
+       instead of being clipped by the canvas box. */
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .overcurrent-sld-stage {
+    min-width: 700px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overcurrent-sld-current-path {
+    animation: none;
+  }
+
+  .overcurrent-sld-device {
+    transition: none;
+  }
+}
+
+/* O14 responsive/accessibility refinement. */
+.overcurrent-sld-header-actions {
+  display: flex;
+  min-width: 0;
+  flex: none;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.overcurrent-sld-canvas-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--sim-text-dim) transparent;
+  outline: none;
+}
+.overcurrent-sld-canvas-scroll::-webkit-scrollbar { height: 2px; }
+.overcurrent-sld-canvas-scroll::-webkit-scrollbar-track { background: transparent; }
+.overcurrent-sld-canvas-scroll::-webkit-scrollbar-thumb { background: var(--sim-text-dim); border-radius: 0; }
+.overcurrent-sld-canvas-scroll:focus-visible {
+  box-shadow: 0 0 0 1px var(--sim-accent);
+}
+
+.overcurrent-sld[data-expanded='true'] .overcurrent-sld-canvas {
+  min-height: 310px;
+  justify-content: center;
+}
+
+@media (max-width: 620px) {
+  .overcurrent-sld { padding: 8px; }
+  .overcurrent-sld-header { align-items: stretch; flex-direction: column; }
+  .overcurrent-sld-header h3 { white-space: normal; }
+  .overcurrent-sld-header-actions { width: 100%; align-items: center; justify-content: space-between; }
+  .overcurrent-sld-source { max-width: none; justify-items: start; }
+  .overcurrent-sld-source b { white-space: normal; }
+  .overcurrent-sld-canvas {
+    width: 620px;
+    min-width: 620px;
+  }
+  .overcurrent-sld-stage { min-width: 620px; }
+  /* The cropped stage is 100px tall at 620px wide; trim the card so its four
+     text lines still fit inside the canvas without bottom clipping. */
+  .overcurrent-sld-device { padding: 3px 5px; }
+  .overcurrent-sld-device { min-width: 72px; min-height: 48px; }
+  .overcurrent-sld-fault { width: 76px; min-height: 44px; }
+  .overcurrent-sld-scrubber { padding: 9px 8px; }
+  .overcurrent-sld-scrubber input { min-height: 28px; touch-action: pan-y; }
+  .overcurrent-sld-legend { gap: 7px 10px; }
+}
+
+@media (pointer: coarse) {
+  .overcurrent-sld-device,
+  .overcurrent-sld-fault { touch-action: manipulation; }
+  .overcurrent-sld-device { min-height: 48px; }
+  .overcurrent-sld-fault { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overcurrent-sld-current-path { animation: none; }
+  .overcurrent-sld-device { transition: none; }
+}
+
+/* O16 RC2 — supporting topology visual aligned to Differential support-section hierarchy. */
+.overcurrent-sld {
+  border-radius: 5px;
+  padding: 9px;
+}
+.overcurrent-sld-header { padding-bottom: 7px; }
+.overcurrent-sld-kicker {
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  letter-spacing: .07em;
+}
+.overcurrent-sld-header h3 {
+  margin-top: 2px;
+  font-size: 10.5px;
+  letter-spacing: .05em;
+}
+.overcurrent-sld-source span {
+  border-radius: 4px;
+  font-size: 8.5px;
+}
+.overcurrent-sld-source b { font-size: 9px; }
+.overcurrent-sld-device-role,
+.overcurrent-sld-device-current,
+.overcurrent-sld-fault-role,
+.overcurrent-sld-fault-current { font-size: 8.5px; }
+.overcurrent-sld-device-state,
+.overcurrent-sld-fault-state { font-size: 8.5px; }
+.overcurrent-sld-scrubber span,
+.overcurrent-sld-legend { font-size: 8.5px; }

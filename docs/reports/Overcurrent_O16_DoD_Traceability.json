@@ -1,0 +1,110 @@
+[
+  {
+    "id": 1,
+    "requirement": "Engineering Specification approved",
+    "status": "PASS",
+    "note": "O01 approved/frozen specification present and source parity audited."
+  },
+  {
+    "id": 2,
+    "requirement": "50/51 formulas implemented and tested",
+    "status": "PASS",
+    "note": "O03/O04 + O16 independent curve/boundary/random audit."
+  },
+  {
+    "id": 3,
+    "requirement": "CT measurement tested",
+    "status": "PASS",
+    "note": "O03/O04 + O16 200,000 randomized CT cases."
+  },
+  {
+    "id": 4,
+    "requirement": "Single Relay Study complete",
+    "status": "PASS",
+    "note": "OVC-01..OVC-08 registry/model/scenario audit."
+  },
+  {
+    "id": 5,
+    "requirement": "2/3-relay Coordination Lab complete",
+    "status": "PASS",
+    "note": "O05/O06/O15 integration + O16 cross-layer audit."
+  },
+  {
+    "id": 6,
+    "requirement": "CTI/corridor/envelope/worst-case complete",
+    "status": "PASS",
+    "note": "O06 behavior and O16 CTI/profile parity checks."
+  },
+  {
+    "id": 7,
+    "requirement": "TCC graph matches engine",
+    "status": "PASS",
+    "note": "O10H source architecture + O16 TCC-to-engine sample parity."
+  },
+  {
+    "id": 8,
+    "requirement": "SLD interaction complete",
+    "status": "PASS",
+    "note": "O09/O15 source/integration/static accessibility audit."
+  },
+  {
+    "id": 9,
+    "requirement": "Time-domain operating sequence complete",
+    "status": "PASS",
+    "note": "O07/O11 + O16 timeline/static/speed/determinism parity."
+  },
+  {
+    "id": 10,
+    "requirement": "Run Coordination Test complete",
+    "status": "PASS",
+    "note": "O12/O15 state workflow and O16 stale/validation checks."
+  },
+  {
+    "id": 11,
+    "requirement": "Guided study and progressive hints complete",
+    "status": "PASS",
+    "note": "O13 COORD-01..06 initial/solved audit and hint model checks."
+  },
+  {
+    "id": 12,
+    "requirement": "Initial/current comparison complete",
+    "status": "PASS",
+    "note": "O10H/O12 accepted behavior retained; cross-layer model finite."
+  },
+  {
+    "id": 13,
+    "requirement": "Invalid/extreme inputs cannot crash UI/model",
+    "status": "PASS",
+    "note": "O04 hardening + O16 finite traversal and invalid-state source audit."
+  },
+  {
+    "id": 14,
+    "requirement": "Responsive/browser regression clean",
+    "status": "BLOCKED",
+    "note": "Responsive/accessibility source/static audit passes, but exact-source production browser smoke requires a dependency-complete Vite build."
+  },
+  {
+    "id": 15,
+    "requirement": "Homepage route active",
+    "status": "PASS",
+    "note": "O15 route/homepage source audit."
+  },
+  {
+    "id": 16,
+    "requirement": "Documentation/sourcebook updated",
+    "status": "PASS",
+    "note": "O16 release docs and current-status sourcebook update."
+  },
+  {
+    "id": 17,
+    "requirement": "No unresolved P0/P1",
+    "status": "PASS_WITH_EXTERNAL_BLOCKER",
+    "note": "No open product P0/P1; RG-01 remains an external release-gate blocker."
+  },
+  {
+    "id": 18,
+    "requirement": "User explicitly approves freeze",
+    "status": "PENDING",
+    "note": "Must occur after technical release gate is fully closed."
+  }
+]

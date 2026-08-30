@@ -1,0 +1,240 @@
+
+.overcurrent-analysis-invalid b,.overcurrent-analysis-invalid span { display:block; }
+.overcurrent-analysis-invalid b { color:var(--sim-amber); font-size:11.5px; letter-spacing:.04em; font-weight:800; }
+.overcurrent-analysis-invalid span { color:var(--sim-text-secondary); font-size:11px; line-height:1.5; }
+
+
+
+.overcurrent-validation-state { display:grid; grid-template-columns:1fr auto; gap:6px 12px; padding:10px; border-top:1px solid rgba(125,153,174,.13); }
+.overcurrent-validation-state span,.overcurrent-validation-state small { color:var(--sim-text-dim); font-size:11px; letter-spacing:.04em; }
+.overcurrent-validation-state b { font-size:11.5px; }
+.overcurrent-validation-state small { grid-column:1 / -1; }
+.overcurrent-analysis-note,.overcurrent-analysis-empty { color:var(--sim-text-dim); font-size:11.5px; line-height:1.55; }
+.overcurrent-analysis-table,.overcurrent-impact-list,.overcurrent-violation-list,.overcurrent-hint-list,.overcurrent-calculation-list,.overcurrent-analysis-events { display:grid; gap:6px; }
+.overcurrent-analysis-table button { display:grid; grid-template-columns:26px minmax(65px,1fr) 72px minmax(90px,1fr); gap:8px; align-items:center; width:100%; border:1px solid rgba(125,153,174,.13); background:rgba(10,20,31,.52); color:inherit; padding:8px; text-align:left; }
+.overcurrent-analysis-table button[data-selected='true'],.overcurrent-analysis-table button:hover { border-color:rgba(126,200,217,.55); }
+.overcurrent-analysis-table button:focus-visible { border-color:rgba(126,200,217,.55); outline:2px solid var(--sim-accent); outline-offset:1px; }
+.overcurrent-analysis-table button > span { color:var(--sim-text-dim); font-size: 11.5px; }
+.overcurrent-analysis-table b { font-size:11.5px; }
+.overcurrent-analysis-table small { color:var(--sim-text-muted); font-size: 11px; }
+.overcurrent-analysis-table em { color:var(--sim-text-secondary); font-size:12px; font-style:normal; text-align:right; }
+.overcurrent-analysis-measurements { display:grid; gap:6px; }
+.overcurrent-analysis-measurements button { display:grid; grid-template-columns:minmax(55px,.7fr) repeat(3,minmax(70px,1fr)); gap:7px; align-items:center; border:1px solid rgba(125,153,174,.13); background:rgba(10,20,31,.52); color:inherit; padding:7px; text-align:left; }
+.overcurrent-analysis-measurements button[data-selected='true'] { border-color:rgba(126,200,217,.55); }
+.overcurrent-analysis-measurements button:focus-visible { border-color:rgba(126,200,217,.55); outline:2px solid var(--sim-accent); outline-offset:1px; }
+.overcurrent-analysis-measurements b { font-size:11.5px; }
+.overcurrent-analysis-measurements span { color:var(--sim-text-secondary); font-size:11.5px; }
+.overcurrent-margin-list { display:grid; gap:6px; }
+.overcurrent-margin-list > div { display:grid; grid-template-columns:1fr auto 48px; gap:8px; padding:8px; border:1px solid rgba(125,153,174,.13); font-size:11.5px; }
+.overcurrent-margin-list em { font-style:normal; font-weight:800; text-align:right; font-size:12.5px; }
+.overcurrent-margin-list > div[data-status='PASS'] em::before { content:'● '; }
+.overcurrent-margin-list > div[data-status='PASS'] em { color:var(--sim-green); }
+.overcurrent-margin-list > div[data-status='FAIL'] em::before { content:'▲ '; }
+.overcurrent-margin-list > div[data-status='FAIL'] em { color:var(--sim-red); }
+.overcurrent-margin-list > div[data-status='NOT_EVALUABLE'] em::before { content:'■ '; }
+.overcurrent-margin-list > div[data-status='NOT_EVALUABLE'] em { color:var(--sim-text-muted); }
+.overcurrent-check-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+.overcurrent-check-grid > div { padding:8px; border:1px solid rgba(125,153,174,.13); background:rgba(10,20,31,.52); }
+.overcurrent-check-grid span,.overcurrent-check-grid b,.overcurrent-check-grid small { display:block; }
+.overcurrent-check-grid span { color:var(--sim-text-muted); font-size: 11.5px; text-transform:uppercase; }
+.overcurrent-check-grid b { margin-top:3px; font-size:11px; }
+.overcurrent-check-grid small { margin-top:3px; color:var(--sim-text-dim); font-size: 11px; }
+.overcurrent-check-grid [data-tone='success'] b { color:var(--sim-green); }
+.overcurrent-check-grid [data-tone='danger'] b { color:var(--sim-red); }
+.overcurrent-worst-case { padding:10px; border:1px solid rgba(216,174,99,.28); background:rgba(92,65,23,.14); }
+.overcurrent-worst-case span,.overcurrent-worst-case b { display:block; }
+.overcurrent-worst-case span { color:var(--sim-amber); font-size: 11.5px; font-weight:800; letter-spacing:.045em; }
+.overcurrent-worst-case b { margin-top:4px; font-size:11.5px; font-weight:500; }
+.overcurrent-violation-list > div { padding:8px; border-left:2px solid var(--sim-red); background:rgba(82,30,31,.16); }
+.overcurrent-violation-list > div[data-tone='warning'] { border-left-color:var(--sim-amber); background:rgba(92,65,23,.13); }
+.overcurrent-violation-list b,.overcurrent-violation-list span { display:block; }
+.overcurrent-violation-list b { font-size:11px; letter-spacing:.035em; }
+.overcurrent-violation-list span { margin-top:3px; color:var(--sim-text-muted); font-size:11px; line-height:1.5; }
+.overcurrent-analysis-comparison { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; padding-bottom:8px; border-bottom:1px solid rgba(125,153,174,.13); }
+.overcurrent-analysis-comparison > span { grid-column:1 / -1; color:var(--sim-accent); font-size: 11.5px; font-weight:800; letter-spacing:.04em; }
+.overcurrent-analysis-comparison div { padding:8px; background:rgba(10,20,31,.52); }
+.overcurrent-analysis-comparison small,.overcurrent-analysis-comparison b { display:block; }
+.overcurrent-analysis-comparison small { color:var(--sim-text-dim); font-size: 11.5px; }
+.overcurrent-analysis-comparison b { margin-top:3px; font-size: 11.5px; }
+.overcurrent-impact-list > div { padding:8px; border:1px solid rgba(125,153,174,.13); }
+.overcurrent-impact-list span,.overcurrent-impact-list b,.overcurrent-impact-list small { display:block; }
+.overcurrent-impact-list span { color:var(--sim-text-muted); font-size: 11.5px; text-transform:uppercase; }
+.overcurrent-impact-list b { margin:3px 0 5px; color:var(--sim-text-secondary); font-size:11px; }
+.overcurrent-impact-list small { color:var(--sim-text-dim); font-size: 11px; line-height:1.55; }
+.overcurrent-impact-list strong { color:var(--sim-text-secondary); font-weight:700; }
+.overcurrent-hint-list > div { padding:8px; border-left:2px solid var(--sim-accent); background:rgba(20,61,73,.16); }
+.overcurrent-hint-list span,.overcurrent-hint-list b { display:block; }
+.overcurrent-hint-list span { color:var(--sim-accent); font-size: 11.5px; font-weight:800; }
+.overcurrent-hint-list b { margin-top:3px; font-size:11px; font-weight:500; }
+
+.overcurrent-calculation-list code { display:block; white-space:normal; overflow-wrap:anywhere; padding:8px; background:rgba(6,13,21,.62); color:var(--sim-text-secondary); font-size: 11.5px; line-height:1.6; }
+.overcurrent-analysis-events > div { display:grid; grid-template-columns:62px 1fr auto; gap:8px; padding:6px 0; border-bottom:1px solid rgba(125,153,174,.09); font-size: 11.5px; }
+.overcurrent-analysis-events span,.overcurrent-analysis-events small { color:var(--sim-text-dim); }
+
+@media (max-width: 560px) {
+  .overcurrent-analysis-table button { grid-template-columns:22px 1fr 70px; }
+  .overcurrent-analysis-table em { grid-column:2 / -1; text-align:left; }
+  .overcurrent-analysis-measurements button { grid-template-columns:1fr 1fr; }
+  .overcurrent-check-grid,.overcurrent-analysis-comparison { grid-template-columns:1fr; }
+  .overcurrent-analysis-comparison > span { grid-column:1; }
+}
+
+/* O14 responsive/accessibility refinement. */
+
+@media (max-width: 720px) {
+  .overcurrent-analysis-table button {
+    grid-template-columns: 26px minmax(70px, 1fr) minmax(72px, .8fr);
+  }
+  .overcurrent-analysis-table em {
+    grid-column: 2 / -1;
+    justify-self: start;
+    text-align: left;
+  }
+  .overcurrent-margin-list > div {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .overcurrent-margin-list > div > span:first-child { grid-column: 1 / -1; }
+  .overcurrent-analysis-events > div {
+    grid-template-columns: 62px minmax(0, 1fr);
+  }
+  .overcurrent-analysis-events small { grid-column: 2; }
+}
+
+@media (max-width: 420px) {
+  .overcurrent-analysis-measurements button { grid-template-columns: minmax(0, 1fr); }
+  .overcurrent-analysis-measurements button > * { min-width: 0; overflow-wrap: anywhere; }
+  .overcurrent-margin-list > div { grid-template-columns: minmax(0, 1fr); }
+  .overcurrent-margin-list em { text-align: left; }
+}
+
+@media (pointer: coarse) {
+  .overcurrent-analysis-table button,
+  .overcurrent-analysis-measurements button { min-height: 44px; touch-action: manipulation; }
+}
+
+@media (pointer: coarse) {
+  .overcurrent-analysis-panel .parameter-group-header { min-height: 44px; touch-action: manipulation; }
+}
+
+/* O16 RC2 — engineering answer first; reduce status duplication and microtext. */
+
+
+.overcurrent-analysis-subhead {
+  margin: 12px 0 6px;
+  padding: 6px 0 0;
+  border-top: 1px solid rgba(125, 153, 174, .13);
+  color: var(--sim-accent);
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+/* Analysis typography floor.
+   The shared R09 microtext classes (parameter-group-badge, section-summary-*)
+   render at 7.5-9.7px, which is unreadable in the narrow Analysis column.
+   Overridden panel-scoped so the FROZEN Differential R10 styles stay intact. */
+.overcurrent-analysis-panel .parameter-group-header {
+  min-height: 38px;
+  gap: 8px;
+  padding: 9px 10px;
+  font-size: 11.5px;
+  letter-spacing: .07em;
+}
+/* Section titles are structural labels — they must never ellipsis-truncate in
+   the narrow Analysis column, so allow a two-line wrap instead. */
+.overcurrent-analysis-panel .parameter-group-title-text {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.overcurrent-analysis-panel .parameter-group-badge {
+  padding: 2px 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  letter-spacing: .04em;
+}
+.overcurrent-analysis-panel .parameter-group-summary { padding: 8px 10px; }
+.overcurrent-analysis-panel .parameter-group-body { padding: 10px; }
+.overcurrent-analysis-panel .section-summary-label,
+.overcurrent-analysis-panel .section-summary-entity-title {
+  font-size: 10px;
+  line-height: 1.3;
+  letter-spacing: .045em;
+}
+.overcurrent-analysis-panel .section-summary-value,
+.overcurrent-analysis-panel .section-summary-entity-primary,
+.overcurrent-analysis-panel .section-summary-text-value {
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+.overcurrent-analysis-panel .section-summary-unit { font-size: 10px; line-height: 1.3; }
+.overcurrent-analysis-panel .section-summary-sublabel { font-size: 10px; line-height: 1.4; }
+.overcurrent-analysis-panel .section-summary-entity-secondary { font-size: 10px; }
+.overcurrent-analysis-panel .section-summary-entity-secondary b { font-size: 10.5px; }
+.overcurrent-analysis-panel .section-summary-metric,
+.overcurrent-analysis-panel .section-summary-text,
+.overcurrent-analysis-panel .section-summary-entity { padding: 7px 9px; }
+
+/* Two-line rows: the engineering answer leads, secondary readings align right
+   so the eye can scan a column instead of decoding a cramped 4-column strip. */
+.overcurrent-analysis-panel .overcurrent-analysis-measurements button {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  padding: 8px;
+}
+.overcurrent-analysis-panel .overcurrent-analysis-measurements button > b { grid-area: 1 / 1; }
+.overcurrent-analysis-panel .overcurrent-analysis-measurements button > span:nth-of-type(3) {
+  grid-area: 1 / 2;
+  color: var(--sim-text);
+  font-weight: 700;
+  text-align: right;
+}
+.overcurrent-analysis-panel .overcurrent-analysis-measurements button > span:nth-of-type(1) { grid-area: 2 / 1; }
+.overcurrent-analysis-panel .overcurrent-analysis-measurements button > span:nth-of-type(2) {
+  grid-area: 2 / 2;
+  text-align: right;
+}
+
+.overcurrent-analysis-panel .overcurrent-analysis-table button {
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 4px 8px;
+  padding: 8px;
+}
+.overcurrent-analysis-panel .overcurrent-analysis-table button > span { grid-area: 1 / 1; }
+.overcurrent-analysis-panel .overcurrent-analysis-table button > b { grid-area: 1 / 2; }
+.overcurrent-analysis-panel .overcurrent-analysis-table button > em {
+  grid-area: 1 / 3;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+.overcurrent-analysis-panel .overcurrent-analysis-table button > small { grid-area: 2 / 2 / 3 / 4; }
+
+@media (max-width: 420px) {
+  .overcurrent-analysis-panel .overcurrent-analysis-measurements button {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .overcurrent-analysis-panel .overcurrent-analysis-measurements button > b,
+  .overcurrent-analysis-panel .overcurrent-analysis-measurements button > span {
+    grid-area: auto;
+    min-width: 0;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+  .overcurrent-analysis-panel .overcurrent-analysis-table button {
+    grid-template-columns: 26px minmax(0, 1fr);
+  }
+  .overcurrent-analysis-panel .overcurrent-analysis-table button > em,
+  .overcurrent-analysis-panel .overcurrent-analysis-table button > small {
+    grid-area: 2 / 2 / 3 / 3;
+    text-align: left;
+  }
+}

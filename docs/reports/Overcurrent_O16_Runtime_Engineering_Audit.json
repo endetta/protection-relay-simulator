@@ -1,0 +1,115 @@
+{
+  "generatedAt": "2026-08-14T06:40:20.000Z",
+  "categories": {
+    "curve-reference": {
+      "checks": 18,
+      "passed": 18,
+      "failures": []
+    },
+    "curve-oracle": {
+      "checks": 18,
+      "passed": 18,
+      "failures": []
+    },
+    "curve-random": {
+      "checks": 120000,
+      "passed": 120000,
+      "failures": []
+    },
+    "pickup-boundary": {
+      "checks": 60000,
+      "passed": 60000,
+      "failures": []
+    },
+    "ct-random": {
+      "checks": 200000,
+      "passed": 200000,
+      "failures": []
+    },
+    "canonical": {
+      "checks": 10,
+      "passed": 10,
+      "failures": []
+    },
+    "cti-random": {
+      "checks": 99164,
+      "passed": 99164,
+      "failures": []
+    },
+    "cti-boundary": {
+      "checks": 3,
+      "passed": 3,
+      "failures": []
+    },
+    "preset-registry": {
+      "checks": 31,
+      "passed": 31,
+      "failures": []
+    },
+    "finite-walk": {
+      "checks": 12812,
+      "passed": 12812,
+      "failures": []
+    },
+    "model-validity": {
+      "checks": 42,
+      "passed": 42,
+      "failures": []
+    },
+    "tcc-engine-parity": {
+      "checks": 925,
+      "passed": 925,
+      "failures": []
+    },
+    "challenge-initial": {
+      "checks": 6,
+      "passed": 6,
+      "failures": []
+    },
+    "challenge-solved": {
+      "checks": 12,
+      "passed": 12,
+      "failures": []
+    },
+    "stale-state": {
+      "checks": 6,
+      "passed": 6,
+      "failures": []
+    },
+    "state-semantics": {
+      "checks": 3,
+      "passed": 3,
+      "failures": []
+    },
+    "cross-layer": {
+      "checks": 3,
+      "passed": 3,
+      "failures": []
+    },
+    "timeline-parity": {
+      "checks": 212,
+      "passed": 212,
+      "failures": []
+    },
+    "timeline-speed": {
+      "checks": 6,
+      "passed": 6,
+      "failures": []
+    },
+    "determinism": {
+      "checks": 1400,
+      "passed": 1400,
+      "failures": []
+    },
+    "differential-regression": {
+      "checks": 3,
+      "passed": 3,
+      "failures": []
+    }
+  },
+  "failures": [],
+  "notes": [],
+  "totalChecks": 494674,
+  "passedChecks": 494674,
+  "ok": true
+}

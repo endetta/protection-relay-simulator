@@ -1,0 +1,111 @@
+.overcurrent-simulator-page {
+  isolation: isolate;
+}
+
+
+.overcurrent-live-stack {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.overcurrent-live-stack > .overcurrent-tcc {
+  min-height: 0;
+}
+
+.overcurrent-page-invalid {
+  display: grid;
+  gap: 3px;
+  border: 1px solid #8a5b12;
+  border-left: 3px solid var(--sim-amber);
+  border-radius: 5px;
+  background: #211a0e;
+  padding: 8px 10px;
+  color: #f6d477;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.overcurrent-page-invalid b {
+  color: var(--sim-amber);
+  font-size: 8.5px;
+  letter-spacing: .055em;
+}
+
+@media (min-width: 1180px) {
+  .overcurrent-simulator-page .simulator-column-live {
+    min-width: 0;
+  }
+
+  .overcurrent-simulator-page .simulator-live-body .overlay-scroll-content {
+    padding-bottom: 2px;
+  }
+}
+
+
+@media (max-width: 520px) {
+  .overcurrent-live-stack { gap: 8px; }
+}
+
+
+/* O15 production-page reference help. It reuses the O14 focus-safe overlay. */
+.overcurrent-help-overlay {
+  width: min(980px, 94vw);
+  height: min(760px, 90vh);
+}
+.overcurrent-help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.overcurrent-help-grid section {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+  background: rgba(13, 20, 27, .82);
+  padding: 9px 10px;
+}
+.overcurrent-help-grid h3 {
+  margin: 0 0 5px;
+  color: var(--sim-accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .065em;
+  text-transform: uppercase;
+}
+.overcurrent-help-grid p {
+  margin: 0;
+  color: var(--sim-text-secondary);
+  font-size: 10px;
+  line-height: 1.55;
+}
+.overcurrent-help-grid b { color: var(--sim-text); }
+.overcurrent-help-limit { grid-column: 1 / -1; }
+
+@media (max-width: 680px) {
+  .overcurrent-help-overlay {
+    width: calc(100vw - 12px);
+    height: calc(100dvh - 12px);
+  }
+  .overcurrent-help-grid { grid-template-columns: minmax(0, 1fr); }
+  .overcurrent-help-limit { grid-column: auto; }
+}
+
+/* O16 RC2 — hierarchy alignment with Differential workstation language. */
+.overcurrent-live-stack {
+  gap: 9px;
+}
+
+.overcurrent-simulator-page .simulator-column-live .overcurrent-tcc {
+  order: 1;
+}
+.overcurrent-simulator-page .simulator-column-live .overcurrent-sld {
+  order: 2;
+}
+.overcurrent-simulator-page .simulator-column-live .overcurrent-sequence {
+  order: 3;
+}
+
+@media (max-width: 520px) {
+  .overcurrent-live-stack { gap: 8px; }
+}

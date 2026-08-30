@@ -1,0 +1,124 @@
+.overcurrent-guided-challenge {
+  margin-bottom: 10px;
+  border: 1px solid var(--sim-border);
+  border-radius: 5px;
+  background: var(--sim-panel-raised);
+  color: var(--sim-text);
+  overflow: hidden;
+}
+.overcurrent-guided-challenge > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 9px;
+  border-bottom: 1px solid var(--sim-border-soft);
+}
+.overcurrent-guided-challenge > header span,
+.overcurrent-guided-objective > span,
+.overcurrent-guided-subhead span,
+.overcurrent-guided-why > span,
+.overcurrent-guided-validation span {
+  display: block;
+  color: var(--sim-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+.overcurrent-guided-challenge > header b {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+}
+.overcurrent-guided-challenge > header em {
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-align: right;
+}
+.overcurrent-guided-challenge > header em[data-tone='success'] { border-color: var(--sim-green-border); color: var(--sim-green); background: var(--sim-green-bg); }
+.overcurrent-guided-challenge > header em[data-tone='danger'] { border-color: var(--sim-red-border); color: var(--sim-red); background: var(--sim-red-bg); }
+.overcurrent-guided-challenge > header em[data-tone='warning'] { border-color: var(--sim-amber); color: var(--sim-amber); background: var(--sim-panel); }
+.overcurrent-guided-challenge > header em[data-tone='info'] { color: var(--sim-accent); }
+.overcurrent-guided-objective { padding: 9px 10px; }
+.overcurrent-guided-objective b { display: block; margin-top: 4px; font-size: 11px; line-height: 1.5; }
+.overcurrent-guided-objective small { display: block; margin-top: 5px; color: var(--sim-text-muted); font-size: 10.5px; line-height: 1.5; }
+.overcurrent-guided-requirements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border-block: 1px solid var(--sim-border-soft);
+  background: var(--sim-border-soft);
+}
+.overcurrent-guided-requirements > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  background: var(--sim-section);
+}
+.overcurrent-guided-requirements span { color: var(--sim-text-muted); font-size: 10px; text-transform: uppercase; }
+.overcurrent-guided-requirements b { font-size: 10.5px; }
+.overcurrent-guided-requirements [data-tone='success'] b { color: var(--sim-green); }
+.overcurrent-guided-requirements [data-tone='danger'] b { color: var(--sim-red); }
+.overcurrent-guided-requirements [data-tone='warning'] b { color: var(--sim-amber); }
+.overcurrent-guided-requirements [data-tone='neutral'] b { color: var(--sim-text-muted); }
+.overcurrent-guided-validation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+}
+.overcurrent-guided-validation b { display: block; margin-top: 3px; font-size: 10.5px; }
+.overcurrent-guided-validation button,
+.overcurrent-guided-hints button {
+  border: 1px solid var(--sim-border-strong);
+  border-radius: 4px;
+  background: var(--sim-panel-raised);
+  color: var(--sim-text-secondary);
+  padding: 7px 9px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.overcurrent-guided-validation button:hover:not(:disabled),
+.overcurrent-guided-hints button:hover,
+.overcurrent-guided-validation button:focus-visible,
+.overcurrent-guided-hints button:focus-visible {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent-bg);
+  color: var(--sim-text);
+  outline: 2px solid transparent;
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, .42);
+}
+.overcurrent-guided-validation button:disabled { opacity: .42; cursor: not-allowed; }
+.overcurrent-guided-hints { padding: 9px 10px; border-top: 1px solid var(--sim-border-soft); }
+.overcurrent-guided-subhead { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.overcurrent-guided-subhead b { color: var(--sim-text-muted); font-size: 10px; }
+.overcurrent-guided-hint { margin-top: 6px; padding: 8px; border-left: 2px solid var(--sim-accent); background: var(--sim-accent-bg); }
+.overcurrent-guided-hint span,.overcurrent-guided-hint b { display: block; }
+.overcurrent-guided-hint span { color: var(--sim-accent); font-size: 10.5px; font-weight: 800; }
+.overcurrent-guided-hint b { margin-top: 3px; font-size: 10.5px; font-weight: 500; line-height: 1.5; }
+.overcurrent-guided-hints > small { display: block; color: var(--sim-text-muted); font-size: 10.5px; line-height: 1.5; }
+.overcurrent-guided-hints > button { width: 100%; margin-top: 8px; }
+.overcurrent-guided-why { padding: 9px 10px; border-top: 1px solid var(--sim-green-border); background: var(--sim-green-bg); }
+.overcurrent-guided-why p { margin: 6px 0 0; color: var(--sim-text-secondary); font-size: 10.5px; line-height: 1.5; }
+.overcurrent-guided-why p::before { content: '• '; color: var(--sim-green); }
+.overcurrent-guided-why small { display: block; margin-top: 7px; color: var(--sim-text-muted); font-size: 10px; line-height: 1.5; }
+@media (max-width: 560px) {
+  .overcurrent-guided-challenge > header,.overcurrent-guided-validation { align-items: stretch; flex-direction: column; }
+  .overcurrent-guided-challenge > header em { text-align: left; }
+  .overcurrent-guided-validation button { width: 100%; }
+  .overcurrent-guided-requirements { grid-template-columns: 1fr; }
+}
+@media (pointer: coarse) {
+  .overcurrent-guided-validation button,
+  .overcurrent-guided-hints > button { min-height: 38px; touch-action: manipulation; }
+}

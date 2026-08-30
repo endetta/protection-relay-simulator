@@ -1,0 +1,496 @@
+.simulator-theme.overcurrent-parameter-panel {
+  min-width: 0;
+  color: var(--sim-text);
+  background: var(--sim-panel);
+}
+
+.overcurrent-invalid-banner {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 9px;
+  border: 1px solid var(--sim-amber);
+  border-left: 3px solid var(--sim-amber);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 7px 8px;
+  color: var(--sim-amber);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.overcurrent-invalid-banner b {
+  color: var(--sim-amber);
+  font-size: 8.5px;
+  letter-spacing: .055em;
+}
+
+.overcurrent-fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.overcurrent-fieldset:disabled {
+  opacity: .68;
+}
+
+.overcurrent-select-grid,
+.overcurrent-field-grid,
+.overcurrent-current-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Ensure all fields fill their grid cell consistently */
+.overcurrent-field-grid > .number-field,
+.overcurrent-field-grid > .overcurrent-select-field,
+.overcurrent-field-grid > label {
+  width: 100%;
+}
+
+/* Truncate overflow text in labels */
+.overcurrent-field-label > span:first-child,
+.overcurrent-subsection-heading > small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overcurrent-select-field {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 6px;
+  color: var(--sim-text-secondary);
+}
+
+.overcurrent-select-field select:focus-visible {
+  outline: 2px solid var(--sim-accent);
+  outline-offset: 1px;
+}
+
+.overcurrent-field-label {
+  display: flex;
+  min-width: 0;
+  min-height: 14px;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .045em;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.overcurrent-field-label > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overcurrent-current-block + .overcurrent-current-block {
+  margin-top: 11px;
+  padding-top: 11px;
+  border-top: 1px solid var(--sim-border-soft);
+}
+
+.overcurrent-load-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.overcurrent-load-row > .overcurrent-select-field { min-width: 0; }
+.overcurrent-load-row > .overcurrent-current-grid {
+  margin-top: 0;
+}
+
+.overcurrent-profile-note,
+.overcurrent-empty-note {
+  display: grid;
+  gap: 3px;
+  margin-top: 9px;
+  border: 1px solid var(--sim-border);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 8px;
+  color: var(--sim-text-muted);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.overcurrent-profile-note > span {
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.overcurrent-profile-note b {
+  color: var(--sim-text);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.overcurrent-profile-note small {
+  color: var(--sim-text-dim);
+  font-size: 8.5px;
+}
+
+.overcurrent-subsection {
+  min-width: 0;
+  border: 1px solid var(--sim-border-strong);
+  border-left: 3px solid var(--sim-accent);
+  border-radius: 6px;
+  background: var(--sim-panel-raised);
+  padding: 12px;
+  margin-top: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+
+.overcurrent-subsection:first-child {
+  margin-top: 0;
+}
+
+.overcurrent-subsection-heading {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--sim-border);
+}
+
+.overcurrent-subsection-heading > span {
+  color: var(--sim-text);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.overcurrent-subsection-heading > small {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--sim-text-muted);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overcurrent-mode-fields {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sim-border-soft);
+}
+
+.overcurrent-requirement-list {
+  display: grid;
+  gap: 9px;
+}
+
+.overcurrent-requirement-card {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 9px;
+}
+
+.overcurrent-requirement-heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--sim-border-soft);
+}
+
+.overcurrent-requirement-heading > div:first-child,
+.overcurrent-required-cti {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.overcurrent-requirement-heading b {
+  color: var(--sim-text);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+}
+
+.overcurrent-requirement-heading span,
+.overcurrent-required-cti span {
+  overflow: hidden;
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 750;
+  letter-spacing: .05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.overcurrent-required-cti {
+  flex: none;
+  justify-items: end;
+}
+
+.overcurrent-required-cti b {
+  color: var(--sim-accent);
+}
+
+.overcurrent-budget-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.overcurrent-speed-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.overcurrent-speed-control > span {
+  color: var(--sim-text-secondary);
+  font-size: 9px;
+  font-weight: 750;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.overcurrent-speed-control > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(34px, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--sim-border-strong);
+  border-radius: 4px;
+}
+
+.overcurrent-speed-control button {
+  min-height: 25px;
+  border: 0;
+  border-right: 1px solid var(--sim-border);
+  background: var(--sim-panel-raised);
+  color: var(--sim-text-muted);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.overcurrent-speed-control button:last-child {
+  border-right: 0;
+}
+
+.overcurrent-speed-control button[data-active='true'] {
+  background: var(--sim-accent-bg);
+  color: var(--sim-text);
+  box-shadow: inset 0 -2px 0 var(--sim-accent);
+}
+
+.overcurrent-speed-control button:focus-visible {
+  outline: 1px solid var(--sim-accent);
+  outline-offset: -2px;
+}
+
+.overcurrent-run-status {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--sim-border);
+  border-left: 3px solid var(--sim-border-strong);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 7px 8px;
+}
+
+.overcurrent-run-status > span {
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.overcurrent-run-status > b {
+  color: var(--sim-text-secondary);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  text-align: right;
+}
+
+.overcurrent-run-status[data-state='running'],
+.overcurrent-run-status[data-state='paused'] {
+  border-color: var(--sim-amber);
+  border-left-color: var(--sim-amber);
+  background: var(--sim-panel);
+}
+
+.overcurrent-run-status[data-state='invalid'] {
+  border-color: var(--sim-amber);
+  border-left-color: var(--sim-amber);
+  background: var(--sim-panel);
+}
+
+.overcurrent-run-status[data-state='complete'] {
+  border-color: var(--sim-green-border);
+  border-left-color: var(--sim-green);
+  background: var(--sim-green-bg);
+}
+
+.overcurrent-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.overcurrent-action-button {
+  min-height: 29px;
+  border: 1px solid var(--sim-border-strong);
+  border-radius: 4px;
+  background: var(--sim-panel);
+  padding: 5px 6px;
+  color: var(--sim-text-secondary);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+}
+
+.overcurrent-action-button[data-tone='primary'] {
+  border-color: var(--sim-accent-soft);
+  background: var(--sim-accent-bg);
+  color: var(--sim-accent);
+}
+
+.overcurrent-action-button:hover:not(:disabled),
+.overcurrent-action-button:focus-visible:not(:disabled) {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent-bg);
+  color: var(--sim-text);
+  outline: none;
+}
+
+.overcurrent-action-button:disabled {
+  cursor: not-allowed;
+  opacity: .38;
+}
+
+.overcurrent-simulation-note {
+  color: var(--sim-text-dim);
+  font-size: 8.7px;
+  line-height: 1.45;
+}
+
+@media (max-width: 370px) {
+  .overcurrent-select-grid,
+  .overcurrent-field-grid,
+  .overcurrent-current-grid,
+  .overcurrent-budget-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .overcurrent-action-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overcurrent-parameter-panel *,
+  .overcurrent-parameter-panel *::before,
+  .overcurrent-parameter-panel *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+
+/* O14 responsive/accessibility refinement. */
+@media (max-width: 560px) {
+  .overcurrent-select-grid,
+  .overcurrent-field-grid,
+  .overcurrent-current-grid,
+  .overcurrent-budget-grid { grid-template-columns: minmax(0, 1fr); }
+  .overcurrent-speed-control { align-items: stretch; flex-direction: column; }
+  .overcurrent-speed-control > div { width: 100%; }
+  .overcurrent-requirement-heading { align-items: flex-start; flex-direction: column; }
+  .overcurrent-required-cti { justify-items: start; }
+  .overcurrent-action-grid { grid-template-columns: minmax(0, 1fr); }
+  .overcurrent-action-button { min-height: 34px; }
+}
+
+@media (pointer: coarse) {
+  .overcurrent-parameter-panel { --number-stepper-width: 30px; --number-unit-width: 34px; }
+  .overcurrent-parameter-panel .number-field-input { min-height: 48px; }
+  .overcurrent-parameter-panel .number-stepper-button { font-size: 9px; touch-action: none; }
+  .overcurrent-select-field select,
+  .overcurrent-speed-control button,
+  .overcurrent-action-button { min-height: 40px; touch-action: manipulation; }
+}
+
+@media (pointer: coarse) {
+  .overcurrent-parameter-panel .parameter-group-header { min-height: 44px; touch-action: manipulation; }
+}
+
+/* O16 RC2 — card-in-card: distinct elevated sub-sections. Accent uses the steel-cyan rail only. */
+
+.overcurrent-subsection {
+  border: 1px solid var(--sim-border-strong);
+  border-left: 3px solid var(--sim-accent);
+  border-radius: 6px;
+  background: var(--sim-panel-raised);
+  padding: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.02);
+}
+.overcurrent-subsection + .overcurrent-subsection {
+  margin-top: 14px;
+}
+.overcurrent-subsection-heading {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--sim-border);
+}
+.overcurrent-subsection-heading > span {
+  color: var(--sim-text);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.overcurrent-subsection-heading > small {
+  font-size: 8.5px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  color: var(--sim-text-muted);
+}
+.overcurrent-profile-note,
+.overcurrent-empty-note,
+.overcurrent-requirement-card,
+.overcurrent-run-status {
+  border-radius: 4px;
+  background: rgba(14, 21, 28, .68);
+}
+.overcurrent-profile-note > span,
+.overcurrent-requirement-heading span,
+.overcurrent-required-cti span,
+.overcurrent-run-status > span {
+  font-size: 8.5px;
+}
+
+.overcurrent-action-button {
+  min-height: 30px;
+  font-size: 8.8px;
+}
+.overcurrent-simulation-note,
+.overcurrent-profile-note small { font-size: 9px; }

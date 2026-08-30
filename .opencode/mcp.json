@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "vitest": {
+      "command": "npx",
+      "args": ["vitest", "--watch=false"]
+    }
+  }
+}

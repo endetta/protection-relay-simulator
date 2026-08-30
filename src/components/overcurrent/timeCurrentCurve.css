@@ -1,0 +1,949 @@
+.overcurrent-tcc {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--sim-border);
+  border-radius: 6px;
+  background: var(--sim-panel-raised);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .018);
+  color: var(--sim-text);
+}
+
+.overcurrent-tcc-header {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--sim-border);
+  background: var(--sim-header);
+  padding: 9px 10px;
+}
+
+.overcurrent-tcc-heading {
+  min-width: 0;
+}
+
+.overcurrent-tcc-heading > span {
+  display: block;
+  color: var(--sim-accent);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.overcurrent-tcc-heading h3 {
+  overflow: hidden;
+  margin: 3px 0 0;
+  color: var(--sim-text);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .052em;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.overcurrent-tcc-controls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+
+.overcurrent-tcc-domain {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+  background: var(--sim-bg);
+}
+
+.overcurrent-tcc-domain button,
+.overcurrent-tcc-comparison {
+  min-height: 26px;
+  border: 0;
+  background: transparent;
+  padding: 4px 8px;
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .045em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.overcurrent-tcc-domain button + button {
+  border-left: 1px solid var(--sim-border);
+}
+
+.overcurrent-tcc-domain button:hover,
+.overcurrent-tcc-comparison:hover {
+  background: var(--sim-control-hover);
+  color: var(--sim-text);
+}
+
+.overcurrent-tcc-domain button[data-active='true'] {
+  background: var(--sim-accent-bg);
+  color: var(--sim-accent);
+  box-shadow: inset 0 -2px 0 var(--sim-accent);
+}
+
+.overcurrent-tcc-comparison {
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+}
+
+.overcurrent-tcc-comparison[data-active='true'] {
+  border-color: var(--sim-border-strong);
+  color: var(--sim-text-secondary);
+}
+
+.overcurrent-tcc-domain button:focus-visible,
+.overcurrent-tcc-comparison:focus-visible,
+.overcurrent-tcc-fit-control:focus-visible,
+.overcurrent-tcc-legend button:focus-visible {
+  outline: 2px solid var(--sim-accent);
+  outline-offset: 1px;
+}
+
+.overcurrent-tcc-readout {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-bottom: 1px solid var(--sim-border-soft);
+  background: var(--sim-section);
+  color: var(--sim-text-muted);
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+
+.overcurrent-tcc-readout span {
+  overflow: hidden;
+  border-right: 1px solid var(--sim-border-soft);
+  padding: 5px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overcurrent-tcc-readout span:last-child {
+  border-right: 0;
+}
+
+.overcurrent-tcc-readout b {
+  color: var(--sim-text);
+  font-weight: 700;
+}
+
+.overcurrent-tcc-invalid {
+  display: grid;
+  gap: 4px;
+  margin: 12px;
+  border: 1px solid var(--sim-amber);
+  border-left: 3px solid var(--sim-amber);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 10px;
+  color: var(--sim-amber);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.overcurrent-tcc-invalid b {
+  color: var(--sim-amber);
+  font-size: 8.5px;
+  letter-spacing: .055em;
+}
+
+.overcurrent-tcc-frame {
+  position: relative;
+  min-width: 0;
+  background: var(--sim-bg);
+}
+
+.overcurrent-tcc-scroll {
+  min-height: 360px;
+  aspect-ratio: 900 / 520;
+}
+
+.overcurrent-tcc-scroll svg {
+  display: block;
+  width: 100%;
+  min-width: 660px;
+  height: 100%;
+  min-height: 360px;
+  user-select: none;
+  touch-action: none;
+}
+
+/* Smooth transitions for pan/zoom — curves and points animate smoothly */
+@media (prefers-reduced-motion: no-preference) {
+  .overcurrent-tcc-curve-visible,
+  .overcurrent-tcc-curve-target,
+  .overcurrent-tcc-point,
+  .overcurrent-tcc-point-symbol,
+  .overcurrent-tcc-point-target,
+  .overcurrent-tcc-violation,
+  .overcurrent-tcc-corridor,
+  .overcurrent-tcc-reference,
+  .overcurrent-tcc-boundary,
+  .overcurrent-tcc-bracket,
+  .overcurrent-tcc-load-region,
+  .overcurrent-tcc-grid,
+  .overcurrent-tcc-tick,
+  .overcurrent-tcc-offscale,
+  .overcurrent-tcc-offscale-label,
+  .overcurrent-tcc-reference-label,
+  .overcurrent-tcc-boundary-label {
+    transition: transform 120ms ease-out, opacity 120ms ease-out;
+  }
+}
+
+.overcurrent-tcc-scroll svg[style*="cursor: grab"] {
+  cursor: grab;
+}
+
+.overcurrent-tcc-scroll svg[style*="cursor: grabbing"] {
+  cursor: grabbing;
+}
+
+.overcurrent-tcc-fit-control {
+  position: absolute;
+  z-index: 8;
+  top: 10px;
+  left: 50%;
+  min-height: 25px;
+  transform: translateX(-50%);
+  border: 1px solid var(--sim-accent-soft);
+  border-radius: 4px;
+  background: rgba(15, 32, 43, .94);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, .22);
+  padding: 4px 9px;
+  color: var(--sim-accent);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.overcurrent-tcc-fit-control:hover {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent-bg);
+}
+
+.overcurrent-tcc-zoom-indicator {
+  position: absolute;
+  z-index: 8;
+  bottom: 10px;
+  left: 10px;
+  display: grid;
+  gap: 2px;
+  border: 1px solid rgba(42, 57, 71, .84);
+  border-radius: 4px;
+  background: rgba(10, 16, 22, .87);
+  padding: 5px 8px;
+  pointer-events: none;
+}
+
+.overcurrent-tcc-zoom-indicator span {
+  color: var(--sim-accent);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .045em;
+  line-height: 1.2;
+}
+
+.overcurrent-tcc-zoom-indicator small {
+  color: var(--sim-text-secondary);
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: .02em;
+  line-height: 1.3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overcurrent-tcc-zoom-indicator {
+    display: none;
+  }
+}
+
+.overcurrent-tcc-legend {
+  position: absolute;
+  z-index: 7;
+  top: 8px;
+  right: 9px;
+  display: flex;
+  max-width: 48%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 9px;
+  border: 1px solid rgba(42, 57, 71, .84);
+  border-radius: 4px;
+  background: rgba(10, 16, 22, .87);
+  padding: 5px 7px;
+  color: var(--sim-text-secondary);
+  font-size: 10px;
+  line-height: 1.2;
+  pointer-events: auto;
+}
+
+.overcurrent-tcc-legend button,
+.overcurrent-tcc-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  padding: 1px 0;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  opacity: 0.7;
+  transition: opacity 180ms ease;
+}
+
+.overcurrent-tcc-legend button:hover,
+.overcurrent-tcc-legend button[data-selected='true'] {
+  color: var(--sim-text);
+  opacity: 1;
+}
+
+.overcurrent-tcc-legend button[data-selected='true'] {
+  font-weight: 800;
+}
+
+.overcurrent-tcc-legend i {
+  width: 14px;
+  height: 0;
+  border-top: 2px solid var(--tcc-series, var(--sim-text-muted));
+}
+
+.overcurrent-tcc-legend i[data-kind='ghost'] {
+  border-top-style: dashed;
+  border-color: var(--sim-text-muted);
+}
+
+.overcurrent-tcc-legend i[data-kind='corridor'] {
+  border-top-style: dashed;
+  border-color: var(--sim-amber);
+}
+
+.overcurrent-tcc-legend i[data-kind='bracket'] {
+  border-top-style: solid;
+  border-color: var(--sim-text-secondary);
+}
+
+.overcurrent-tcc-plot-bg {
+  fill: var(--sim-bg);
+  stroke: var(--sim-border);
+  stroke-width: 1;
+}
+
+.overcurrent-tcc-grid {
+  stroke: var(--sim-border);
+  stroke-width: 1;
+}
+
+.overcurrent-tcc-axis {
+  stroke: var(--sim-text-muted);
+  stroke-width: 1.1;
+}
+
+.overcurrent-tcc-tick,
+.overcurrent-tcc-axis-label {
+  fill: var(--sim-text-muted);
+}
+
+.overcurrent-tcc-tick {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .01em;
+}
+
+.overcurrent-tcc-axis-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+
+.overcurrent-tcc-load-region {
+  stroke: var(--sim-border-strong);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.overcurrent-tcc-reference {
+  stroke: #d97373;
+  stroke-width: 1.35;
+  stroke-dasharray: 3 4;
+  opacity: .8;
+}
+
+.overcurrent-tcc-reference[data-kind='MINIMUM_FAULT'] {
+  stroke: #a78bfa;
+  stroke-dasharray: 2 5;
+}
+
+.overcurrent-tcc-reference[data-kind='MAXIMUM_FAULT'] {
+  stroke: #fb7185;
+  stroke-dasharray: 7 4;
+}
+
+.overcurrent-tcc-reference-label {
+  fill: #e89898;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  paint-order: stroke;
+  stroke: var(--sim-bg);
+  stroke-width: 3px;
+}
+
+.overcurrent-tcc-reference-label[data-kind='MINIMUM_FAULT'] {
+  fill: #c4b5fd;
+}
+
+.overcurrent-tcc-reference-label[data-kind='MAXIMUM_FAULT'] {
+  fill: #fda4af;
+}
+
+.overcurrent-tcc-boundary {
+  stroke: var(--tcc-series);
+  stroke-width: 1;
+  opacity: .55;
+}
+
+.overcurrent-tcc-boundary[data-kind='PICKUP'] {
+  stroke-dasharray: 2 4;
+}
+
+.overcurrent-tcc-boundary[data-kind='INSTANTANEOUS'] {
+  stroke-width: 2;
+  stroke-dasharray: 10 3 2 3;
+  opacity: .9;
+}
+
+.overcurrent-tcc-boundary-label {
+  fill: var(--sim-text-muted);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--sim-bg);
+  stroke-width: 3px;
+}
+
+.overcurrent-tcc-boundary-label[data-kind='INSTANTANEOUS'] {
+  fill: var(--sim-amber);
+}
+
+.overcurrent-tcc-corridor {
+  fill: none;
+  stroke: var(--sim-amber);
+  stroke-width: 1.4;
+  stroke-dasharray: 6 4;
+  opacity: .78;
+}
+
+.overcurrent-tcc-violation {
+  fill: rgba(248, 113, 113, .14);
+  stroke: rgba(248, 113, 113, .55);
+  stroke-width: .8;
+}
+
+.overcurrent-tcc-violation-point {
+  fill: var(--sim-red);
+  stroke: var(--sim-bg);
+  stroke-width: 1;
+}
+
+
+.overcurrent-tcc-bracket {
+  fill: none;
+  stroke: var(--sim-text-secondary);
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+
+.overcurrent-tcc-bracket[data-status='PASS'] {
+  stroke: var(--sim-green);
+}
+
+.overcurrent-tcc-bracket[data-status='FAIL'] {
+  stroke: var(--sim-red);
+}
+
+.overcurrent-tcc-bracket text {
+  fill: currentColor;
+  stroke: var(--sim-bg);
+  stroke-width: 3px;
+  paint-order: stroke;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .015em;
+}
+
+.overcurrent-tcc-bracket[data-status='PASS'] text {
+  fill: var(--sim-green);
+}
+
+.overcurrent-tcc-bracket[data-status='FAIL'] text {
+  fill: var(--sim-red);
+}
+
+.overcurrent-tcc-bracket .overcurrent-tcc-bracket-status {
+  font-size: 8.5px;
+  font-weight: 700;
+  opacity: .9;
+}
+
+.overcurrent-tcc-curve-visible {
+  fill: none;
+  stroke: var(--tcc-series);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  opacity: .78;
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.overcurrent-tcc-curve-group[data-selected='true'] .overcurrent-tcc-curve-visible {
+  stroke-width: 3.2;
+  opacity: 1;
+}
+
+.overcurrent-tcc-curve-group[data-ghost='true'] .overcurrent-tcc-curve-visible {
+  stroke: var(--sim-text-secondary);
+  stroke-width: 1.5;
+  opacity: .55;
+}
+
+.overcurrent-tcc-curve-target {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 16;
+  cursor: crosshair;
+  pointer-events: stroke;
+}
+
+.overcurrent-tcc-curve-target:focus-visible {
+  outline: 2px solid var(--sim-accent);
+  outline-offset: 2px;
+  stroke: rgba(56, 189, 248, .65);
+}
+
+.overcurrent-tcc-point {
+  cursor: crosshair;
+}
+
+.overcurrent-tcc-point-symbol {
+  fill: var(--sim-bg);
+  stroke: var(--tcc-series);
+  stroke-width: 2.2;
+  vector-effect: non-scaling-stroke;
+}
+
+.overcurrent-tcc-point[data-element='50'] .overcurrent-tcc-point-symbol {
+  fill: var(--tcc-series);
+  stroke: var(--sim-text);
+  stroke-width: 1.1;
+}
+
+.overcurrent-tcc-point[data-no-pickup='true'] .overcurrent-tcc-point-symbol {
+  fill: var(--sim-bg);
+  stroke-dasharray: 2 2;
+}
+
+.overcurrent-tcc-point[data-selected='true'] .overcurrent-tcc-point-symbol {
+  filter: drop-shadow(0 0 3px var(--tcc-series));
+  stroke-width: 3;
+}
+
+.overcurrent-tcc-point-target {
+  fill: transparent;
+  stroke: transparent;
+}
+
+.overcurrent-tcc-point:focus-visible {
+  outline: 2px solid var(--sim-accent);
+  outline-offset: 2px;
+}
+
+.overcurrent-tcc-point:focus-visible .overcurrent-tcc-point-target {
+  stroke: var(--sim-accent);
+  stroke-width: 2.2;
+  stroke-opacity: 0.75;
+}
+
+.overcurrent-tcc-offscale {
+  fill: none;
+  stroke: var(--tcc-series);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.5;
+  pointer-events: none;
+}
+
+.overcurrent-tcc-offscale-label {
+  fill: var(--sim-amber);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .025em;
+  paint-order: stroke;
+  pointer-events: none;
+  stroke: var(--sim-bg);
+  stroke-width: 3px;
+}
+
+.overcurrent-tcc-footer {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  border-top: 1px solid var(--sim-border);
+  background: var(--sim-section);
+  padding: 6px 9px;
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  line-height: 1.3;
+}
+
+.overcurrent-tcc-footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.overcurrent-tcc-footer i {
+  width: 13px;
+  height: 0;
+  border-top: 1px dashed var(--sim-text-muted);
+}
+
+.overcurrent-tcc-footer i[data-kind='instantaneous'] {
+  border-top: 2px solid var(--sim-amber);
+}
+
+.overcurrent-tcc-footer i[data-kind='fault'] {
+  border-color: var(--sim-red);
+}
+
+.overcurrent-tcc-footer i[data-kind='load'] {
+  width: 11px;
+  height: 7px;
+  border: 1px dashed var(--sim-text-muted);
+  background: rgba(100, 119, 134, .12);
+}
+
+.overcurrent-tcc-footer strong {
+  margin-left: auto;
+  color: var(--sim-text-secondary);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .overcurrent-tcc-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .overcurrent-tcc-controls {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .overcurrent-tcc-readout {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .overcurrent-tcc-readout span:nth-child(2) {
+    border-right: 0;
+  }
+
+  .overcurrent-tcc-readout span:nth-child(-n+2) {
+    border-bottom: 1px solid var(--sim-border-soft);
+  }
+
+  .overcurrent-tcc-legend {
+    max-width: 56%;
+  }
+}
+
+@media (max-width: 520px) {
+  .overcurrent-tcc-scroll {
+    min-height: 330px;
+  }
+
+  .overcurrent-tcc-scroll svg {
+    min-width: 620px;
+    min-height: 330px;
+  }
+
+  .overcurrent-tcc-fit-control {
+    left: 42%;
+  }
+
+  .overcurrent-tcc-legend {
+    right: 5px;
+    max-width: 44%;
+  }
+
+  .overcurrent-tcc-footer strong {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overcurrent-tcc *,
+  .overcurrent-tcc *::before,
+  .overcurrent-tcc *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation: none !important;
+  }
+}
+
+.overcurrent-tcc-offscale-label[data-kind='BELOW_PICKUP'] {
+  fill: var(--sim-text-muted);
+}
+
+/* === TCC interactivity & animation === */
+
+/* Crosshair that follows the cursor inside the plot area. */
+.overcurrent-tcc-crosshair {
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.overcurrent-tcc:hover .overcurrent-tcc-crosshair {
+  opacity: 1;
+}
+.overcurrent-tcc-crosshair-line {
+  stroke: var(--sim-accent);
+  stroke-width: 0.6;
+  stroke-dasharray: 3 3;
+  opacity: 0.55;
+  transition: opacity 140ms ease, stroke-width 140ms ease;
+}
+.overcurrent-tcc:hover .overcurrent-tcc-crosshair-line {
+  opacity: 0.85;
+  stroke-width: 0.75;
+}
+.overcurrent-tcc-crosshair-dot {
+  fill: var(--sim-accent);
+  opacity: 0.9;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.7));
+  animation: tcc-crosshair-pulse 1.4s ease-in-out infinite;
+}
+@keyframes tcc-crosshair-pulse {
+  0%, 100% { opacity: 0.65; r: 3; }
+  50% { opacity: 1; r: 4; }
+}
+
+/* Curve hover glow + entrance animation. */
+.overcurrent-tcc-curve-visible {
+  transition: stroke-width 180ms ease, opacity 180ms ease, filter 180ms ease;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.overcurrent-tcc-curve-group:hover .overcurrent-tcc-curve-visible,
+.overcurrent-tcc-curve-group[data-selected='true'] .overcurrent-tcc-curve-visible {
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 4px var(--tcc-series, var(--sim-accent)));
+}
+.overcurrent-tcc-curve-group {
+  animation: tcc-curve-draw 720ms cubic-bezier(0.32, 0.72, 0.24, 1) both;
+  transform-origin: 0 0;
+}
+@keyframes tcc-curve-draw {
+  0% {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Operating-point pulse rings for selected points. */
+.overcurrent-tcc-point {
+  cursor: pointer;
+}
+.overcurrent-tcc-point .overcurrent-tcc-point-symbol {
+  transition: r 200ms ease, fill 180ms ease, stroke 180ms ease, filter 180ms ease;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.overcurrent-tcc-point:hover .overcurrent-tcc-point-symbol,
+.overcurrent-tcc-point:focus-visible .overcurrent-tcc-point-symbol,
+.overcurrent-tcc-point[data-selected='true'] .overcurrent-tcc-point-symbol {
+  filter: drop-shadow(0 0 6px var(--tcc-series, var(--sim-accent)));
+}
+.overcurrent-tcc-point[data-selected='true'] .overcurrent-tcc-point-symbol {
+  animation: tcc-point-pulse 1.6s ease-in-out infinite;
+}
+@keyframes tcc-point-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+.overcurrent-tcc-point-target {
+  fill: transparent;
+  stroke: transparent;
+  transition: stroke 180ms ease, fill 180ms ease;
+}
+.overcurrent-tcc-point:hover .overcurrent-tcc-point-target,
+.overcurrent-tcc-point:focus-visible .overcurrent-tcc-point-target {
+  fill: var(--tcc-series, var(--sim-accent));
+  fill-opacity: 0.12;
+  stroke: var(--tcc-series, var(--sim-accent));
+  stroke-opacity: 0.45;
+  stroke-width: 1;
+  animation: tcc-target-expand 1.2s ease-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes tcc-target-expand {
+  0% { transform: scale(0.6); opacity: 0.6; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* Trip indicator on the chart when a point is in 50 / off-scale / below pickup region. */
+.overcurrent-tcc-offscale {
+  animation: tcc-trip-flash 1.4s ease-in-out infinite;
+}
+@keyframes tcc-trip-flash {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+
+/* Curve legend pulse when active. */
+.overcurrent-tcc-legend button[data-selected='true'] i {
+  box-shadow: 0 0 4px var(--tcc-series, var(--sim-accent));
+  animation: tcc-legend-glow 1.8s ease-in-out infinite;
+}
+@keyframes tcc-legend-glow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4); }
+}
+
+
+
+/* O14 responsive/accessibility refinement. */
+.overcurrent-visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+
+.overcurrent-tcc[data-expanded='true'] {
+  display: grid;
+  min-height: 100%;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+.overcurrent-tcc[data-expanded='true'] .overcurrent-tcc-frame,
+.overcurrent-tcc[data-expanded='true'] .overcurrent-tcc-scroll {
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: auto;
+}
+.overcurrent-tcc[data-expanded='true'] .overcurrent-tcc-scroll svg {
+  min-width: 760px;
+  min-height: 520px;
+}
+
+.overcurrent-tcc-controls button,
+.overcurrent-tcc-legend button,
+.overcurrent-tcc-fit-control {
+  touch-action: manipulation;
+}
+
+@media (max-width: 760px) {
+  .overcurrent-tcc-controls { align-items: stretch; }
+  .overcurrent-tcc-domain { flex: 1 1 210px; }
+  .overcurrent-tcc-domain button { flex: 1; }
+  .overcurrent-tcc-comparison { flex: 1 1 150px; }
+  .overcurrent-tcc-controls > .overcurrent-engineering-expand { margin-left: auto; }
+}
+
+@media (max-width: 520px) {
+  .overcurrent-tcc { border-radius: 5px; }
+  .overcurrent-tcc-header { padding: 8px; gap: 8px; }
+  .overcurrent-tcc-heading h3 { white-space: normal; }
+  .overcurrent-tcc-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .overcurrent-tcc-domain { grid-column: 1 / -1; width: 100%; }
+  .overcurrent-tcc-comparison { min-height: 34px; }
+  .overcurrent-tcc-controls > .overcurrent-engineering-expand { min-height: 34px; margin-left: 0; }
+  .overcurrent-tcc-readout { grid-template-columns: minmax(0, 1fr); }
+  .overcurrent-tcc-readout span,
+  .overcurrent-tcc-readout span:nth-child(2) { border-right: 0; border-bottom: 1px solid var(--sim-border-soft); }
+  .overcurrent-tcc-readout span:last-child { border-bottom: 0; }
+  .overcurrent-tcc-scroll { overscroll-behavior-x: contain; }
+  .overcurrent-tcc-legend {
+    top: 7px;
+    right: 5px;
+    max-width: 52%;
+    max-height: 72px;
+    overflow-y: auto;
+  }
+  .overcurrent-tcc-fit-control { left: 34%; }
+}
+
+@media (pointer: coarse) {
+  .overcurrent-tcc-domain button,
+  .overcurrent-tcc-comparison,
+  .overcurrent-tcc-fit-control,
+  .overcurrent-tcc-legend button { min-height: 34px; }
+  .overcurrent-tcc-curve-target { stroke-width: 22; }
+  .overcurrent-tcc-point-target { r: 18; }
+}
+
+/* O16 RC2 — make TCC the primary live engineering visual without outranking the column title. */
+.overcurrent-tcc {
+  border-radius: 5px;
+  background: var(--sim-panel-raised);
+}
+.overcurrent-tcc-header {
+  gap: 10px;
+  background: var(--sim-panel-raised);
+  padding: 8px 9px;
+}
+.overcurrent-tcc-heading > span {
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  letter-spacing: .07em;
+}
+.overcurrent-tcc-heading h3 {
+  margin-top: 2px;
+  font-size: 10.5px;
+  letter-spacing: .055em;
+}
+.overcurrent-tcc-readout { font-size: 9px; }
+.overcurrent-tcc-domain button,
+.overcurrent-tcc-comparison { font-size: 8.5px; }
+  .overcurrent-tcc-tick { font-size: 10px; }
+  .overcurrent-tcc-axis-label { font-size: 10.5px; }
+.overcurrent-tcc-bracket-status,
+.overcurrent-tcc-reference-label,
+.overcurrent-tcc-boundary-label,
+.overcurrent-tcc-offscale-label { font-size: 8.5px; }
