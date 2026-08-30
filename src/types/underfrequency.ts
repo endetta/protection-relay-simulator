@@ -225,6 +225,7 @@ export interface UnderfrequencyStaticResult {
 export type UnderfrequencyTimelineEventType =
   | 'DISTURBANCE_APPLIED'
   | 'GOVERNOR_SATURATION'
+  | 'GOVERNOR_UNSATURATION'
   | 'UFLS_ARMED'
   | 'UFLS_TIMER_RESET'
   | 'UFLS_TRIP'

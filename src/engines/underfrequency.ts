@@ -255,7 +255,12 @@ export function solveSteadyStateDeficit(input: StaticInput): {
       });
     }
     return {
-      steadyStateHz: fNominalHz + df,
+      // Over-shedding (a deficit that is negative after UFLS) would otherwise
+      // report a steady state above nominal. There is no equilibrium above
+      // nominal in this governor model (droop response is clamped to
+      // [0, headroom]), so clamp the settle point to Δf = 0 — this matches the
+      // timeline's clamp exactly (U01 § 8.2) and keeps parity universal.
+      steadyStateHz: fNominalHz + Math.min(df, 0),
       betaPu: beta,
       solveStatus: 'SETTLED',
       governorResults,
@@ -462,58 +467,64 @@ function resolveStaticWithUfls(
   generators: readonly UnderfrequencyGeneratorData[],
   uflsStages: readonly UflsStageSettings[],
 ): ResolvedDeficit {
-  // Monotone fixed-point: shed every stage whose threshold the current
-  // steady-state frequency falls strictly below (U01 § 9). Shedding lowers the
-  // deficit → raises frequency → may de-operate a lower stage. Converges in at
-  // most `stageCount + 1` steps.
-  let deficit = computeInitialDeficit(generators, system.baseLoadMw);
-  // Set of stage ids that have already shed (conservative fixed-point).
+  const fNominalHz = system.fNominalHz;
+  const baseLoadMw = system.baseLoadMw;
+  const initialDeficit = computeInitialDeficit(generators, baseLoadMw);
+
+  // Greedy-latch UFLS resolution (U01 § 9). The closed-form reference must
+  // reproduce the *timeline's* latched final state — UFLS trips latch and never
+  // un-operate even if frequency later recovers above a threshold. The falling
+  // frequency encounters stages in strictly descending threshold order, so we
+  // shed the highest-threshold not-yet-shed stage, latch it, and stop once the
+  // settled frequency sits at/above the next un-shed stage's pickup (strict
+  // below-threshold, via `nearlyEqual`). This is exactly the set the timeline
+  // latches, so the closed form is a true bit-exact parity target (§ 13.1).
+  const enabled = uflsStages.filter((s) => s.enabled);
   const shedSet = new Set<string>();
-  let finalFrequencyHz: number | null = null;
-  for (let iter = 0; iter < uflsStages.length + 2; iter += 1) {
+  let deficit = initialDeficit;
+  for (let guard = 0; guard <= enabled.length; guard += 1) {
     const candidate = solveSteadyStateDeficit({
       generators,
-      fNominalHz: system.fNominalHz,
+      fNominalHz,
       deficitMw: deficit,
       uflsStages,
-      baseLoadMw: system.baseLoadMw,
+      baseLoadMw,
     });
-    finalFrequencyHz = candidate.steadyStateHz;
-    // Collapse means the frequency fell below the entire ladder — so shed every
-    // not-yet-shed stage and re-solve. Only conclude true collapse once all
-    // stages have shed and the deficit still exceeds available generation.
-    const shed = uflsStages.reduce((sum, s) => {
-      if (!s.enabled) return sum;
-      const operated = finalFrequencyHz === null ||
-        (finalFrequencyHz < s.thresholdHz && !nearlyEqual(finalFrequencyHz, s.thresholdHz));
-      if (!operated || shedSet.has(s.id)) return sum;
-      shedSet.add(s.id);
-      return sum + (s.shedFractionPct / 100) * system.baseLoadMw;
-    }, 0);
-    const newDeficit = deficit - shed;
-    if (Math.abs(newDeficit - deficit) <= 1e-9) break;
-    deficit = newDeficit;
+    // The next stage the falling frequency would encounter: the highest
+    // threshold not yet shed.
+    const next = enabled
+      .filter((s) => !shedSet.has(s.id))
+      .sort((a, b) => b.thresholdHz - a.thresholdHz)[0];
+    const shedMore =
+      next === undefined
+        ? false
+        : candidate.steadyStateHz === null // collapse → below the whole ladder
+          ? true
+          : candidate.steadyStateHz < next.thresholdHz &&
+            !nearlyEqual(candidate.steadyStateHz, next.thresholdHz);
+    if (!shedMore) break;
+    shedSet.add(next.id);
+    deficit -= (next.shedFractionPct / 100) * baseLoadMw;
   }
-  // After the loop, re-solve the residual deficit for a canonical steady state.
-  const candidate = solveSteadyStateDeficit({
+
+  const finalCandidate = solveSteadyStateDeficit({
     generators,
-    fNominalHz: system.fNominalHz,
+    fNominalHz,
     deficitMw: deficit,
     uflsStages,
-    baseLoadMw: system.baseLoadMw,
+    baseLoadMw,
   });
-  const resolvedHz = candidate.steadyStateHz;
   const totalShedMw = [...shedSet].reduce((sum, id) => {
     const stage = uflsStages.find((s) => s.id === id);
-    return sum + (stage ? (stage.shedFractionPct / 100) * system.baseLoadMw : 0);
+    return sum + (stage ? (stage.shedFractionPct / 100) * baseLoadMw : 0);
   }, 0);
   return {
     generators,
-    fNominalHz: system.fNominalHz,
+    fNominalHz,
     deficitMw: deficit,
     uflsStages,
-    baseLoadMw: system.baseLoadMw,
-    finalFrequencyHz: resolvedHz,
+    baseLoadMw,
+    finalFrequencyHz: finalCandidate.steadyStateHz,
     operatedStageIds: [...shedSet],
     totalShedMw,
   };
