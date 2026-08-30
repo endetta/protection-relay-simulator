@@ -44,6 +44,24 @@
   letter-spacing: .055em;
 }
 
+/* The Indonesian section toggles ("BENTANGKAN SEMUA" / "CIUTKAN SEMUA") are
+   longer than the shared 88px slot those buttons were sized for, so here we
+   widen the heading side-slots and let the label wrap inside the button —
+   scoped to this page only, leaving the shared class (which fits the short
+   English labels used by Overcurrent/Differential) untouched. */
+.underfrequency-simulator-page .simulator-column-heading {
+  grid-template-columns: 96px minmax(0, 1fr) 96px;
+}
+.underfrequency-simulator-page .simulator-column-heading-spacer,
+.underfrequency-simulator-page .simulator-column-action { width: 96px; }
+.underfrequency-simulator-page .section-utility-button {
+  width: 96px;
+  min-width: 96px;
+  padding-inline: 5px;
+  line-height: 1.1;
+  white-space: normal;
+}
+
 /* Step-guide focus: the non-focused columns are softly dimmed to signal the
    current step, but never locked — hover/focus restores full emphasis. */
 .underfrequency-simulator-page .simulator-column {
@@ -81,6 +99,16 @@
 @media (max-width: 520px) {
   .underfrequency-live-stack { gap: 8px; }
   .underfrequency-live-cards { gap: 8px; }
+  .underfrequency-simulator-page .simulator-column-heading {
+    grid-template-columns: 82px minmax(0, 1fr) 82px;
+  }
+  .underfrequency-simulator-page .simulator-column-heading-spacer,
+  .underfrequency-simulator-page .simulator-column-action { width: 82px; }
+  .underfrequency-simulator-page .section-utility-button {
+    width: 82px;
+    min-width: 82px;
+    font-size: 7.8px;
+  }
 }
 
 /* Reference help overlay (reuses the focus-safe EngineeringViewOverlay). */

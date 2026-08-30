@@ -60,9 +60,9 @@ describe('UFR Frequency — Time chart', () => {
     expect(markup).toContain('STEADY');
     expect(markup).toContain('UFLS threshold');
     expect(markup).toContain('UFLS trip');
-    expect(markup).toContain('aria-label="Underfrequency playback control"');
+    expect(markup).toContain('aria-label="Kontrol playback Underfrequency"');
     expect(markup).toContain('aria-label="Playback speed"');
-    expect(markup).toContain('aria-label="Scrub underfrequency timeline"');
+    expect(markup).toContain('aria-label="Geser timeline underfrequency"');
   });
 
   it('renders story-mode steps and a Story toggle in the header', () => {

@@ -3,6 +3,23 @@ import { parseEngineeringDraft } from '../../utils/engineering';
 import { usePressRepeat } from '../../hooks/usePressRepeat';
 import { InfoDot } from './InfoDot';
 
+/** Localizable prose for the generic auto-generated field help/error/aria strings. */
+export interface NumberFieldIntl {
+  validInputLabel?: string;
+  typicalBandLabel?: string;
+  typicalBandOutside?: string;
+  invalidDraft?: string;
+  increaseLabel?: (label: string) => string;
+  decreaseLabel?: (label: string) => string;
+}
+
+const DEFAULT_INTL: Required<Omit<NumberFieldIntl, 'increaseLabel' | 'decreaseLabel'>> & NumberFieldIntl = {
+  validInputLabel: 'Valid input',
+  typicalBandLabel: 'Typical study band',
+  typicalBandOutside: 'Values outside this band may still be valid.',
+  invalidDraft: 'Invalid draft — last valid value remains in the simulation.',
+};
+
 interface FieldProps {
   label: string;
   unit: string;
@@ -16,6 +33,7 @@ interface FieldProps {
   onValidityChange?: (valid: boolean) => void;
   syncKey?: number;
   info?: string;
+  intl?: NumberFieldIntl;
 }
 
 function rangeLabel(min: number | undefined, max: number | undefined, unit: string): string | null {
@@ -54,7 +72,9 @@ export function NumberField({
   onValidityChange,
   syncKey = 0,
   info,
+  intl = {},
 }: FieldProps) {
+  const i18n = { ...DEFAULT_INTL, ...intl };
   const inputId = useId();
   const errorId = useId();
   const [draft, setDraft] = useState(String(value));
@@ -90,8 +110,8 @@ export function NumberField({
   const typicalRange = rangeLabel(typicalMin, typicalMax, unit);
   const help = [
     info,
-    validRange ? `Valid input: ${validRange}.` : null,
-    typicalRange ? `Typical study band: ${typicalRange}. Values outside this band may still be valid.` : null,
+    validRange ? `${i18n.validInputLabel}: ${validRange}.` : null,
+    typicalRange ? `${i18n.typicalBandLabel}: ${typicalRange}. ${i18n.typicalBandOutside}` : null,
   ].filter(Boolean).join(' ');
 
   const stepValue = (direction: 1 | -1): boolean => {
@@ -144,7 +164,7 @@ export function NumberField({
           <div className='number-stepper-buttons absolute inset-y-[1px] right-[1px] grid grid-rows-2 overflow-hidden rounded-r-[3px] border-l'>
             <button
               type='button'
-              aria-label={`Increase ${label}`}
+              aria-label={i18n.increaseLabel?.(label) ?? `Increase ${label}`}
               disabled={atMax}
               {...incrementPress}
               className='number-stepper-button flex items-center justify-center border-b text-[7px] leading-none disabled:cursor-not-allowed disabled:opacity-30'
@@ -153,7 +173,7 @@ export function NumberField({
             </button>
             <button
               type='button'
-              aria-label={`Decrease ${label}`}
+              aria-label={i18n.decreaseLabel?.(label) ?? `Decrease ${label}`}
               disabled={atMin}
               {...decrementPress}
               className='number-stepper-button flex items-center justify-center text-[7px] leading-none disabled:cursor-not-allowed disabled:opacity-30'
@@ -166,7 +186,7 @@ export function NumberField({
       </div>
 
       {!valid && (
-        <span id={errorId} className='text-[9px] leading-tight text-[var(--sim-red)]'>Invalid draft — last valid value remains in the simulation.</span>
+        <span id={errorId} className='text-[9px] leading-tight text-[var(--sim-red)]'>{i18n.invalidDraft}</span>
       )}
     </div>
   );

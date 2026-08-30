@@ -225,15 +225,15 @@ export function FrequencyTimelineChart({
               type='button'
               className='underfrequency-ftc-expand'
               onClick={() => setExpanded(true)}
-              aria-label='Expand frequency timeline'
+              aria-label='Perluas timeline frekuensi'
             >
-              Expand
+              Perluas
             </button>
           )}
         </div>
       </header>
 
-      <div className='underfrequency-ftc-readout' aria-label='Frequency timeline summary'>
+      <div className='underfrequency-ftc-readout' aria-label='Ringkasan timeline frekuensi'>
         <span>f NOW <b className='font-eng'>{fNow}</b></span>
         <span>MIN f <b className='font-eng'>{model?.minFrequencyHz !== null ? formatFrequencyHz(model?.minFrequencyHz ?? 0) : '—'}</b></span>
         <span>STEADY <b className='font-eng'>{model?.finalFrequencyHz !== null ? formatFrequencyHz(model?.finalFrequencyHz ?? 0) : '—'}</b></span>
@@ -241,7 +241,7 @@ export function FrequencyTimelineChart({
       </div>
 
       {storyOpen && steps.length > 0 && (
-        <div className='underfrequency-ftc-story' aria-label='Story phase steps'>
+        <div className='underfrequency-ftc-story' aria-label='Langkah fase story'>
           <div className='underfrequency-ftc-story-chips'>
             {steps.map((step) => (
               <button
@@ -268,11 +268,11 @@ export function FrequencyTimelineChart({
       {!model || model.status === 'INVALID' ? (
         <div className='underfrequency-ftc-invalid' role='status'>
           <b>INPUT INVALID · GRAPH HELD</b>
-          <span>{model?.finalTimeSec === 0 ? 'Correct invalid engineering input before running.' : 'Unable to build a finite frequency curve.'}</span>
+          <span>{model?.finalTimeSec === 0 ? 'Perbaiki input engineering yang tidak valid sebelum menjalankan.' : 'Tidak dapat membangun kurva frekuensi yang finite.'}</span>
         </div>
       ) : (
         <>
-          <div className='underfrequency-ftc-playback' role='group' aria-label='Underfrequency playback control'>
+          <div className='underfrequency-ftc-playback' role='group' aria-label='Kontrol playback Underfrequency'>
             <div className='underfrequency-ftc-playback-buttons'>
               {playbackState === 'RUNNING' ? (
                 <button type='button' onClick={() => dispatch({ type: 'SET_PLAYBACK_STATE', playbackState: 'PAUSED' })}>Pause</button>
@@ -302,13 +302,13 @@ export function FrequencyTimelineChart({
               step={0.01}
               value={Math.min(totalTimeSec || 0, scrubTimeSec ?? totalTimeSec ?? 0)}
               disabled={totalTimeSec === 0}
-              aria-label='Scrub underfrequency timeline'
+              aria-label='Geser timeline underfrequency'
               onChange={(event) => setScrubTimeSec(Number(event.target.value))}
             />
           </div>
 
           <div className='underfrequency-ftc-frame'>
-            <div className='underfrequency-ftc-legend' aria-label='Frequency timeline legend'>
+            <div className='underfrequency-ftc-legend' aria-label='Legend timeline frekuensi'>
               <span><i data-kind='curve' /> System frequency</span>
               <span><i data-kind='nominal' /> Nominal {formatFrequencyHz(model.nominalFrequencyHz)} Hz</span>
               <span><i data-kind='stage' /> UFLS threshold</span>
@@ -323,7 +323,7 @@ export function FrequencyTimelineChart({
               className='underfrequency-ftc-svg'
             >
               <desc id={`${titleId}-plot`}>
-                System frequency versus engineering time with UFLS thresholds, trip markers, and the nominal frequency line.
+                System frequency terhadap engineering time dengan UFLS thresholds, penanda trip, dan garis frekuensi nominal.
               </desc>
 
               <defs>
@@ -387,13 +387,13 @@ export function FrequencyTimelineChart({
 
                 {/* Collapse / steady-state marker */}
                 {model.collapseEvent && (
-                  <g className='underfrequency-ftc-collapse' aria-label='Frequency collapse'>
+                  <g className='underfrequency-ftc-collapse' aria-label='Kolaps frekuensi'>
                     <line x1={sx(model.collapseEvent.timeSec)} y1={MARGIN_TOP} x2={sx(model.collapseEvent.timeSec)} y2={H - MARGIN_BOTTOM} />
                     <text x={sx(model.collapseEvent.timeSec) + 5} y={MARGIN_TOP + 12} className='underfrequency-ftc-event-label'>COLLAPSE</text>
                   </g>
                 )}
                 {model.steadyStateEvent && (
-                  <g className='underfrequency-ftc-steady' aria-label='Steady state reached'>
+                  <g className='underfrequency-ftc-steady' aria-label='Steady state tercapai'>
                     <line x1={sx(model.steadyStateEvent.timeSec)} y1={MARGIN_TOP} x2={sx(model.steadyStateEvent.timeSec)} y2={H - MARGIN_BOTTOM} />
                     <text x={sx(model.steadyStateEvent.timeSec) - 5} y={MARGIN_TOP + 12} textAnchor='end' className='underfrequency-ftc-event-label'>STEADY</text>
                   </g>

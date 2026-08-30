@@ -14,15 +14,15 @@ describe('Underfrequency (81U) page / route integration contracts', () => {
     const markup = renderInRouter(<UnderfrequencySimulator />);
 
     expect(markup).toContain('Underfrequency Relay');
-    expect(markup).toContain('Parameters');
-    expect(markup).toContain('Live Simulation');
-    expect(markup).toContain('Analysis');
+    expect(markup).toContain('Parameter');
+    expect(markup).toContain('Simulasi Langsung');
+    expect(markup).toContain('Analisis');
     // Live column hero chart + the two response cards.
     expect(markup).toContain('Frequency — Time');
     expect(markup).toContain('Generator Diagram');
     expect(markup).toContain('Load Shedding');
     // The default preset is UFR-01 Nominal — balanced, no disturbance.
-    expect(markup).toContain('Nominal Operation');
+    expect(markup).toContain('Operasi Nominal');
   });
 
   it('keeps the shared Home control and module-specific header identity', () => {
@@ -33,7 +33,7 @@ describe('Underfrequency (81U) page / route integration contracts', () => {
     expect(markup).toContain('Underfrequency Relay');
     // Not the Differential module-specific help text.
     expect(markup).not.toContain('Differential Model Help');
-    expect(markup).toContain('Open Underfrequency relay help');
+    expect(markup).toContain('Buka bantuan Underfrequency Relay');
   });
 
   it('activates Underfrequency on the homepage without dropping other available modules', () => {

@@ -36,7 +36,7 @@ export function SheddingChart({ uflsStages, baseLoadMw, run, className = '' }: S
       {model.status === 'INVALID' ? (
         <div className='underfrequency-shedding-message' data-tone='danger' role='status'>
           <b>NO STAGES</b>
-          <span>Configure at least one enabled UFLS stage.</span>
+          <span>Konfigurasikan setidaknya satu UFLS stage yang enabled.</span>
         </div>
       ) : (
         <div className='underfrequency-shedding-ladder'>

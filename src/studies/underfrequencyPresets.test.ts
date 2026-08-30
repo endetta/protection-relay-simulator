@@ -25,7 +25,7 @@ describe('UFR preset registry (U01 § 10)', () => {
   });
 
   it('looks up presets by id and throws on unknown ids', () => {
-    expect(getUnderfrequencyStudyPreset('UFR-03').study.label).toBe('Loss of Two Units');
+    expect(getUnderfrequencyStudyPreset('UFR-03').study.label).toBe('Kehilangan Dua Unit');
     expect(() => getUnderfrequencyStudyPreset('UFR-99')).toThrow(/Unknown Underfrequency preset/);
   });
 

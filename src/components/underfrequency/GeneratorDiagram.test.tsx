@@ -25,7 +25,7 @@ describe('UFR Generator Diagram', () => {
   it('renders four generator rows with output, governor, and RPM stat tiles', () => {
     const markup = renderDiagram('UFR-02');
     expect(markup).toContain('Generator Diagram');
-    expect(markup).toContain('Generator response diagram');
+    expect(markup).toContain('Diagram respons generator');
     expect(markup.match(/class="underfrequency-gen-diagram-row"/g)).toHaveLength(4);
     expect(markup.match(/>Output</g)).toHaveLength(4);
     expect(markup.match(/>Governor</g)).toHaveLength(4);
@@ -34,6 +34,10 @@ describe('UFR Generator Diagram', () => {
     expect(markup.match(/>Headroom</g)).toHaveLength(4);
     expect(markup).toContain('MW');
     expect(markup).not.toMatch(/(?:NaN|Infinity)/);
+    // The three stat tiles must be grouped in a stats band so the 4-column main
+    // grid never overflows them into an implicit second row (the 7-vs-5 bug).
+    expect(markup.match(/class="underfrequency-gen-row-stats"/g)).toHaveLength(4);
+    expect(markup.match(/>RPM<\/span>/g)).toHaveLength(4);
   });
 
   it('shows NO SNAPSHOT status when no snapshot is available', () => {

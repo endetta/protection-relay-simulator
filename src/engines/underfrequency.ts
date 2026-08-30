@@ -310,13 +310,13 @@ export function validateUnderfrequencySystem(
 ): readonly DomainIssue[] {
   const issues: DomainIssue[] = [];
   if (!isFinitePositive(system.fNominalHz)) {
-    issues.push(issue('NON_POSITIVE_F_NOM', 'system.fNominalHz', 'Nominal frequency must be finite and > 0.'));
+    issues.push(issue('NON_POSITIVE_F_NOM', 'system.fNominalHz', 'Frekuensi nominal harus finite dan > 0.'));
   }
   if (!Number.isFinite(system.voltageKv) || system.voltageKv <= 0) {
-    issues.push(issue('NUMERICAL_RANGE', 'system.voltageKv', 'Voltage must be finite and > 0.'));
+    issues.push(issue('NUMERICAL_RANGE', 'system.voltageKv', 'Tegangan harus finite dan > 0.'));
   }
   if (!Number.isFinite(system.baseLoadMw) || system.baseLoadMw <= 0) {
-    issues.push(issue('NUMERICAL_RANGE', 'system.baseLoadMw', 'Base load must be finite and > 0.'));
+    issues.push(issue('NUMERICAL_RANGE', 'system.baseLoadMw', 'Base load harus finite dan > 0.'));
   }
   return issues;
 }
@@ -326,27 +326,27 @@ export function validateUnderfrequencyGenerators(
 ): readonly DomainIssue[] {
   const issues: DomainIssue[] = [];
   if (generators.length === 0) {
-    issues.push(issue('INVALID_TOPOLOGY', 'generators', 'At least one generator is required.'));
+    issues.push(issue('INVALID_TOPOLOGY', 'generators', 'Setidaknya satu generator diperlukan.'));
     return issues;
   }
   for (const g of generators) {
     if (!isFinitePositive(g.mva)) {
-      issues.push(issue('NON_POSITIVE_MVA', `generators.${g.id}.mva`, 'MVA rating must be finite and > 0.'));
+      issues.push(issue('NON_POSITIVE_MVA', `generators.${g.id}.mva`, 'Rating MVA harus finite dan > 0.'));
     }
     if (!isFinitePositive(g.inertiaSec)) {
-      issues.push(issue('NON_POSITIVE_INERTIA', `generators.${g.id}.inertiaSec`, 'Inertia constant must be finite and > 0.'));
+      issues.push(issue('NON_POSITIVE_INERTIA', `generators.${g.id}.inertiaSec`, 'Konstanta inertia harus finite dan > 0.'));
     }
     if (!isFinitePositive(g.droopPu)) {
-      issues.push(issue('NON_POSITIVE_DROOP', `generators.${g.id}.droopPu`, 'Droop must be finite and > 0.'));
+      issues.push(issue('NON_POSITIVE_DROOP', `generators.${g.id}.droopPu`, 'Droop harus finite dan > 0.'));
     }
     if (!Number.isInteger(g.poles) || g.poles <= 0) {
-      issues.push(issue('INVALID_POLES', `generators.${g.id}.poles`, 'Pole count must be a positive integer.'));
+      issues.push(issue('INVALID_POLES', `generators.${g.id}.poles`, 'Jumlah pole harus bilangan bulat positif.'));
     }
     if (g.governorMaxMw < g.initialMw) {
-      issues.push(issue('NON_POSITIVE_HEADROOM', `generators.${g.id}.governorMaxMw`, 'Governor max output must be >= initial output (non-negative headroom).'));
+      issues.push(issue('NON_POSITIVE_HEADROOM', `generators.${g.id}.governorMaxMw`, 'Output maksimum governor harus >= initial output (headroom non-negatif).'));
     }
     if (g.initialMw > g.mwRated) {
-      issues.push(issue('NUMERICAL_RANGE', `generators.${g.id}.initialMw`, 'Initial output cannot exceed rated MW.'));
+      issues.push(issue('NUMERICAL_RANGE', `generators.${g.id}.initialMw`, 'Initial output tidak boleh melebihi rated MW.'));
     }
   }
   return issues;
@@ -361,20 +361,20 @@ export function validateUnderfrequencyUflsStages(
     const prev = stages[i - 1];
     const curr = stages[i];
     if (curr.thresholdHz >= prev.thresholdHz && !nearlyEqual(curr.thresholdHz, prev.thresholdHz)) {
-      issues.push(issue('INVALID_UFLS_ORDER', `uflsStages.${curr.id}.thresholdHz`, 'UFLS stages must be ordered by strictly descending threshold.'));
+      issues.push(issue('INVALID_UFLS_ORDER', `uflsStages.${curr.id}.thresholdHz`, 'UFLS stages harus diurutkan berdasarkan threshold yang menurun secara strict.'));
       break;
     }
     if (curr.shedFractionPct < 0 || curr.shedFractionPct > 100) {
-      issues.push(issue('NON_POSITIVE_SHED_FRACTION', `uflsStages.${curr.id}.shedFractionPct`, 'Shed fraction must be in [0, 100].'));
+      issues.push(issue('NON_POSITIVE_SHED_FRACTION', `uflsStages.${curr.id}.shedFractionPct`, 'Shed fraction harus berada dalam [0, 100].'));
       break;
     }
   }
   for (const s of stages) {
     if (!isFinitePositive(s.thresholdHz)) {
-      issues.push(issue('NUMERICAL_RANGE', `uflsStages.${s.id}.thresholdHz`, 'Threshold must be finite and > 0.'));
+      issues.push(issue('NUMERICAL_RANGE', `uflsStages.${s.id}.thresholdHz`, 'Threshold harus finite dan > 0.'));
     }
     if (!Number.isFinite(s.timeDelaySec) || s.timeDelaySec < 0) {
-      issues.push(issue('NUMERICAL_RANGE', `uflsStages.${s.id}.timeDelaySec`, 'Delay must be finite and >= 0.'));
+      issues.push(issue('NUMERICAL_RANGE', `uflsStages.${s.id}.timeDelaySec`, 'Delay harus finite dan >= 0.'));
     }
   }
   return issues;

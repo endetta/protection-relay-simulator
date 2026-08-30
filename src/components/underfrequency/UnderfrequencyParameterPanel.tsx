@@ -12,10 +12,26 @@ import {
 import { formatEngineeringNumber, formatFrequencyHz } from '../../utils/engineering';
 import type { UnderfrequencyAction } from '../../utils/underfrequencyState';
 import { InfoDot } from '../shared/InfoDot';
-import { NumberField } from '../shared/NumberField';
-import { ParameterGroup } from '../shared/ParameterGroup';
+import { NumberField, type NumberFieldIntl } from '../shared/NumberField';
+import { ParameterGroup, type ParameterGroupIntl } from '../shared/ParameterGroup';
 import { SectionSummary, SummaryMetric } from '../shared/SectionSummary';
 import './underfrequencyParameterPanel.css';
+
+/** Indonesian prose for the shared NumberField (technical labels stay English). */
+const PARAM_FIELD_INTL: NumberFieldIntl = {
+  validInputLabel: 'Input valid',
+  typicalBandLabel: 'Band studi tipikal',
+  typicalBandOutside: 'Nilai di luar band ini mungkin masih valid.',
+  invalidDraft: 'Draf tidak valid — nilai valid terakhir tetap berlaku di simulasi.',
+  increaseLabel: (label) => `Naikkan ${label}`,
+  decreaseLabel: (label) => `Turunkan ${label}`,
+};
+/** Indonesian collapse/expand titles for shared ParameterGroup. */
+const PARAM_GROUP_INTL: ParameterGroupIntl = {
+  hideTitle: (title) => `Ciutkan ${title}`,
+  showTitle: (title) => `Bentangkan ${title}`,
+};
+const PARAM_HELP_ARIA = 'Tampilkan bantuan parameter';
 
 export interface UnderfrequencyParameterPanelProps {
   readonly state: UnderfrequencySimulatorState;
@@ -43,7 +59,7 @@ function SelectControl({ label, value, help, onChange, children }: SelectControl
     <label className='underfrequency-select-field' htmlFor={selectId}>
       <span className='underfrequency-field-label'>
         <span>{label}</span>
-        {help && <InfoDot help={help} />}
+        {help && <InfoDot help={help} ariaLabel={PARAM_HELP_ARIA} />}
       </span>
       <select
         id={selectId}
@@ -124,11 +140,11 @@ export function UnderfrequencyParameterPanel({
   const totalReserveMw = state.study.generators.reduce((sum, g) => sum + Math.max(0, g.governorMaxMw - g.initialMw), 0);
 
   return (
-    <div className='underfrequency-parameter-panel simulator-theme' aria-label='Underfrequency relay parameter editor'>
+    <div className='underfrequency-parameter-panel simulator-theme' aria-label='Editor parameter relay Underfrequency'>
       {(!valid || !draftValid) && (
         <div className='underfrequency-invalid-banner' role='status'>
           <b>INPUT INVALID · OUTPUT HELD</b>
-          <span>{!draftValid ? 'Complete every highlighted field within its stated range.' : firstIssue}</span>
+          <span>{!draftValid ? 'Lengkapi setiap field yang disorot dalam rentang yang ditentukan.' : firstIssue}</span>
         </div>
       )}
 
@@ -138,33 +154,34 @@ export function UnderfrequencyParameterPanel({
         onOpenChange={(open) => setOpen('study', open)}
         badge={state.modified ? 'MODIFIED' : 'PRESET'}
         badgeTone={state.modified ? 'info' : 'neutral'}
+        intl={PARAM_GROUP_INTL}
         summary={(
-          <SectionSummary columns={2} ariaLabel='Underfrequency study selection summary'>
+          <SectionSummary columns={2} ariaLabel='Ringkasan pemilihan studi Underfrequency'>
             <SummaryMetric label='Preset' value={state.study.label} />
-            <SummaryMetric label='Status' value={state.modified ? 'Modified' : 'Nominal'} />
+            <SummaryMetric label='Status' value={state.modified ? 'Dimodifikasi' : 'Nominal'} />
           </SectionSummary>
         )}
       >
         <SelectControl
-          label='Scenario preset'
+          label='Preset skenario'
           value={state.study.id}
           onChange={(presetId) => {
             dispatch({ type: 'APPLY_PRESET', presetId });
             syncDrafts();
           }}
-          help='Named presets supply system, generator, UFLS, and disturbance data. Reset returns to this preset.'
+          help='Preset bernama menyediakan data system, generator, UFLS, dan disturbance. Reset mengembalikan ke preset ini.'
         >
           {presets.map((preset) => <option key={preset.id} value={preset.id}>{preset.id} · {preset.label}</option>)}
         </SelectControl>
         {state.modified && (
           <button type='button' className='underfrequency-reset-preset' onClick={() => { dispatch({ type: 'RESET' }); syncDrafts(); }}>
-            Reset to preset
+            Kembali ke preset
           </button>
         )}
         {state.study.notes?.plnVerificationRequired && (
           <p className='underfrequency-pln-note'>
             <b>PLN STANDARD — NOT VERIFIED</b>
-            <span>{state.study.notes.sourceNote ?? 'Typical practice; pending official grid-code verification.'}</span>
+            <span>{state.study.notes.sourceNote ?? 'Praktik umum; menunggu verifikasi grid-code resmi.'}</span>
           </p>
         )}
       </ParameterGroup>
@@ -175,17 +192,18 @@ export function UnderfrequencyParameterPanel({
         onOpenChange={(open) => setOpen('system', open)}
         badge={issueTouches('system') ? 'INVALID' : 'OK'}
         badgeTone={issueTouches('system') ? 'warning' : 'success'}
+        intl={PARAM_GROUP_INTL}
         summary={(
-          <SectionSummary columns={2} ariaLabel='System summary'>
+          <SectionSummary columns={2} ariaLabel='Ringkasan system'>
             <SummaryMetric label='Nominal f' value={formatFrequencyHz(system.fNominalHz)} unit='Hz' />
             <SummaryMetric label='Base load' value={formatEngineeringNumber(system.baseLoadMw)} unit='MW' />
           </SectionSummary>
         )}
       >
         <div className='underfrequency-field-grid'>
-          <NumberField label='Nominal frequency' unit='Hz' value={system.fNominalHz} min={40} max={70} step={0.5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('system.fNominalHz')} onChange={(value) => dispatch({ type: 'SET_SYSTEM', patch: { fNominalHz: value } })} info='Nominal system frequency. Default 50 Hz.' />
-          <NumberField label='Voltage' unit='kV' value={system.voltageKv} min={1} step={5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('system.voltageKv')} onChange={(value) => dispatch({ type: 'SET_SYSTEM', patch: { voltageKv: value } })} info='Study line-to-line voltage. Display-only; no network model.' />
-          <NumberField label='Base load' unit='MW' value={system.baseLoadMw} min={1} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('system.baseLoadMw')} onChange={(value) => dispatch({ type: 'SET_SYSTEM', patch: { baseLoadMw: value } })} info='Pre-disturbance total load, used as the base for UFLS shed amounts.' />
+          <NumberField label='Nominal frequency' unit='Hz' value={system.fNominalHz} min={40} max={70} step={0.5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('system.fNominalHz')} onChange={(value) => dispatch({ type: 'SET_SYSTEM', patch: { fNominalHz: value } })} info='Frekuensi nominal system. Default 50 Hz.' intl={PARAM_FIELD_INTL} />
+          <NumberField label='Voltage' unit='kV' value={system.voltageKv} min={1} step={5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('system.voltageKv')} onChange={(value) => dispatch({ type: 'SET_SYSTEM', patch: { voltageKv: value } })} info='Tegangan line-to-line studi. Hanya tampilan; tanpa network model.' intl={PARAM_FIELD_INTL} />
+          <NumberField label='Base load' unit='MW' value={system.baseLoadMw} min={1} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('system.baseLoadMw')} onChange={(value) => dispatch({ type: 'SET_SYSTEM', patch: { baseLoadMw: value } })} info='Total beban sebelum gangguan, dipakai sebagai dasar jumlah shed UFLS.' intl={PARAM_FIELD_INTL} />
         </div>
         <div className='underfrequency-system-totals' role='status' aria-live='polite'>
           <span>Σ P₀ <b className='font-eng'>{formatEngineeringNumber(totalInitialMw)} MW</b></span>
@@ -201,8 +219,9 @@ export function UnderfrequencyParameterPanel({
           onOpenChange={(open) => setOpen(`gen:${gen.id}`, open)}
           badge={genInvalid(gen.id) ? 'INVALID' : gen.status}
           badgeTone={genInvalid(gen.id) ? 'warning' : gen.status === 'TRIPPED' ? 'danger' : 'success'}
+          intl={PARAM_GROUP_INTL}
           summary={(
-            <SectionSummary columns={3} compact ariaLabel={`${gen.id} generator summary`}>
+            <SectionSummary columns={3} compact ariaLabel={`Ringkasan generator ${gen.id}`}>
               <SummaryMetric label='Rating' value={formatEngineeringNumber(gen.mwRated)} unit='MW' />
               <SummaryMetric label='Droop' value={`${(gen.droopPu * 100).toFixed(1)}%`} />
               <SummaryMetric label='H' value={formatEngineeringNumber(gen.inertiaSec)} unit='s' />
@@ -210,15 +229,15 @@ export function UnderfrequencyParameterPanel({
           )}
         >
           <div className='underfrequency-field-grid'>
-            <NumberField label='Rated MW' unit='MW' value={gen.mwRated} min={1} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.mwRated`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { mwRated: value } })} info='Nameplate MW rating.' />
-            <NumberField label='Rated MVA' unit='MVA' value={gen.mva} min={1} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.mva`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { mva: value } })} info='MVA rating, used for inertia weighting and S_base.' />
-            <NumberField label='Inertia H' unit='s' value={gen.inertiaSec} min={0.1} step={0.5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.inertiaSec`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { inertiaSec: value } })} info='Inertia constant. Larger H damps ROCOF.' />
-            <NumberField label='Droop R' unit='p.u.' value={gen.droopPu} min={0.001} step={0.01} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.droopPu`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { droopPu: value } })} info='Velocity droop. 0.05 = 5%. Smaller R → stiffer governor.' />
-            <NumberField label='Poles' unit='' value={gen.poles} min={2} max={64} step={2} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.poles`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { poles: value } })} info='Synchronous pole count. Used only for RPM display (N = 120·f/poles).' />
-            <NumberField label='Initial output' unit='MW' value={gen.initialMw} min={0} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.initialMw`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { initialMw: value } })} info='Pre-disturbance output P0.' />
+            <NumberField label='Rated MW' unit='MW' value={gen.mwRated} min={1} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.mwRated`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { mwRated: value } })} info='Rating MW pada nameplate.' intl={PARAM_FIELD_INTL} />
+            <NumberField label='Rated MVA' unit='MVA' value={gen.mva} min={1} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.mva`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { mva: value } })} info='Rating MVA, dipakai untuk pembobotan inertia dan S_base.' intl={PARAM_FIELD_INTL} />
+            <NumberField label='Inertia H' unit='s' value={gen.inertiaSec} min={0.1} step={0.5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.inertiaSec`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { inertiaSec: value } })} info='Konstanta inertia. H lebih besar meredam ROCOF.' intl={PARAM_FIELD_INTL} />
+            <NumberField label='Droop R' unit='p.u.' value={gen.droopPu} min={0.001} step={0.01} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.droopPu`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { droopPu: value } })} info='Velocity droop. 0.05 = 5%. R lebih kecil → governor lebih kaku.' intl={PARAM_FIELD_INTL} />
+            <NumberField label='Poles' unit='' value={gen.poles} min={2} max={64} step={2} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.poles`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { poles: value } })} info='Jumlah pole sinkron. Dipakai hanya untuk tampilan RPM (N = 120·f/poles).' intl={PARAM_FIELD_INTL} />
+            <NumberField label='Initial output' unit='MW' value={gen.initialMw} min={0} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.initialMw`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { initialMw: value } })} info='Output sebelum gangguan P0.' intl={PARAM_FIELD_INTL} />
           </div>
           <div className='underfrequency-field-grid'>
-            <NumberField label='Governor max' unit='MW' value={gen.governorMaxMw} min={0} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.governorMaxMw`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { governorMaxMw: value } })} info='Maximum achievable governor output. Must exceed initial output.' />
+            <NumberField label='Governor max' unit='MW' value={gen.governorMaxMw} min={0} step={10} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`gen.${gen.id}.governorMaxMw`)} onChange={(value) => dispatch({ type: 'SET_GENERATOR', generatorId: gen.id, patch: { governorMaxMw: value } })} info='Output governor maksimum yang dapat dicapai. Harus melebihi initial output.' intl={PARAM_FIELD_INTL} />
             <SelectControl
               label='Status'
               value={gen.status}
@@ -238,8 +257,9 @@ export function UnderfrequencyParameterPanel({
         onOpenChange={(open) => setOpen('relay', open)}
         badge={state.study.relay.enabled ? 'ENABLED' : 'DISABLED'}
         badgeTone={state.study.relay.enabled ? 'success' : 'neutral'}
+        intl={PARAM_GROUP_INTL}
         summary={(
-          <SectionSummary columns={2} ariaLabel='Relay summary'>
+          <SectionSummary columns={2} ariaLabel='Ringkasan relay'>
             <SummaryMetric label='Function' value='81U' />
             <SummaryMetric label='Status' value={state.study.relay.enabled ? 'Enabled' : 'Disabled'} />
           </SectionSummary>
@@ -267,8 +287,9 @@ export function UnderfrequencyParameterPanel({
         onOpenChange={(open) => setOpen('ufls', open)}
         badge={uflsInvalid ? 'INVALID' : `${state.study.uflsStages.filter((s) => s.enabled).length} STAGES`}
         badgeTone={uflsInvalid ? 'warning' : 'info'}
+        intl={PARAM_GROUP_INTL}
         summary={(
-          <SectionSummary columns={2} compact ariaLabel='UFLS summary'>
+          <SectionSummary columns={2} compact ariaLabel='Ringkasan UFLS'>
             <SummaryMetric label='Stage 1' value={state.study.uflsStages[0] ? formatFrequencyHz(state.study.uflsStages[0].thresholdHz) : '—'} unit='Hz' />
             <SummaryMetric label='Stage 4' value={state.study.uflsStages[3] ? formatFrequencyHz(state.study.uflsStages[3].thresholdHz) : '—'} unit='Hz' />
           </SectionSummary>
@@ -289,9 +310,9 @@ export function UnderfrequencyParameterPanel({
                 </SelectControl>
               </div>
               <div className='underfrequency-field-grid'>
-                <NumberField label='Threshold' unit='Hz' value={stage.thresholdHz} min={45} max={system.fNominalHz} step={0.1} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`ufls.${stage.id}.threshold`)} onChange={(value) => dispatch({ type: 'SET_UFLS_STAGE', stageId: stage.id, patch: { thresholdHz: value } })} info='Arming threshold. Pickup is strict: f below threshold (not equal). Thresholds must descend across stages.' />
-                <NumberField label='Delay' unit='s' value={stage.timeDelaySec} min={0} step={0.05} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`ufls.${stage.id}.delay`)} onChange={(value) => dispatch({ type: 'SET_UFLS_STAGE', stageId: stage.id, patch: { timeDelaySec: value } })} info='Definite-time delay after arming.' />
-                <NumberField label='Shed fraction' unit='%' value={stage.shedFractionPct} min={0} max={100} step={5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`ufls.${stage.id}.shed`)} onChange={(value) => dispatch({ type: 'SET_UFLS_STAGE', stageId: stage.id, patch: { shedFractionPct: value } })} info='Percent of pre-disturbance load shed on trip.' />
+                <NumberField label='Threshold' unit='Hz' value={stage.thresholdHz} min={45} max={system.fNominalHz} step={0.1} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`ufls.${stage.id}.threshold`)} onChange={(value) => dispatch({ type: 'SET_UFLS_STAGE', stageId: stage.id, patch: { thresholdHz: value } })} info='Threshold arming. Pickup bersifat strict: f di bawah threshold (bukan sama). Threshold harus menurun antar stage.' intl={PARAM_FIELD_INTL} />
+                <NumberField label='Delay' unit='s' value={stage.timeDelaySec} min={0} step={0.05} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`ufls.${stage.id}.delay`)} onChange={(value) => dispatch({ type: 'SET_UFLS_STAGE', stageId: stage.id, patch: { timeDelaySec: value } })} info='Definite-time delay setelah arming.' intl={PARAM_FIELD_INTL} />
+                <NumberField label='Shed fraction' unit='%' value={stage.shedFractionPct} min={0} max={100} step={5} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity(`ufls.${stage.id}.shed`)} onChange={(value) => dispatch({ type: 'SET_UFLS_STAGE', stageId: stage.id, patch: { shedFractionPct: value } })} info='Persentase beban pre-disturbance yang dilepas saat trip.' intl={PARAM_FIELD_INTL} />
               </div>
             </section>
           ))}
@@ -304,14 +325,15 @@ export function UnderfrequencyParameterPanel({
         onOpenChange={(open) => setOpen('disturbance', open)}
         badge={`${state.study.disturbanceSteps.length} STEP${state.study.disturbanceSteps.length === 1 ? '' : 'S'}`}
         badgeTone={state.study.disturbanceSteps.length ? 'warning' : 'neutral'}
+        intl={PARAM_GROUP_INTL}
         summary={(
-          <SectionSummary columns={1} ariaLabel='Disturbance summary'>
+          <SectionSummary columns={1} ariaLabel='Ringkasan disturbance'>
             <SummaryMetric label='Deficit ΔP' value={state.study.disturbanceSteps.some((s) => s.kind === 'LOAD_STEP') ? formatEngineeringNumber(state.study.disturbanceSteps.find((s) => s.kind === 'LOAD_STEP')?.mw ?? 0) : '0'} unit='MW' />
           </SectionSummary>
         )}
       >
         <div className='underfrequency-disturbance-deficit'>
-          <NumberField label='Manual ΔP (load step)' unit='MW' value={state.study.disturbanceSteps.find((s) => s.kind === 'LOAD_STEP')?.mw ?? 0} min={0} step={50} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('disturbance.deficit')} onChange={(value) => dispatch({ type: 'SET_DISTURBANCE_DEFICIT_MW', mw: value })} info='A manual load-step deficit replaces the disturbance schedule with one event at t = 0. Set to 0 to clear.' />
+          <NumberField label='Manual ΔP (load step)' unit='MW' value={state.study.disturbanceSteps.find((s) => s.kind === 'LOAD_STEP')?.mw ?? 0} min={0} step={50} syncKey={resolvedSyncKey} onValidityChange={setFieldValidity('disturbance.deficit')} onChange={(value) => dispatch({ type: 'SET_DISTURBANCE_DEFICIT_MW', mw: value })} info='Defisit load-step manual menggantikan jadwal disturbance dengan satu event pada t = 0. Set ke 0 untuk menghapus.' intl={PARAM_FIELD_INTL} />
       </div>
 
         <div className='underfrequency-disturbance-list'>
@@ -328,20 +350,20 @@ export function UnderfrequencyParameterPanel({
               </div>
               <button
                 type='button'
-                aria-label={`Remove disturbance step ${step.id}`}
+                aria-label={`Hapus disturbance step ${step.id}`}
                 onClick={() => dispatch({ type: 'REMOVE_DISTURBANCE_STEP', stepId: step.id })}
               >
-                Remove
+                Hapus
               </button>
             </div>
           ))}
           {state.study.disturbanceSteps.length === 0 && (
-            <p className='underfrequency-disturbance-empty'>No disturbance. The preset starts balanced at nominal frequency.</p>
+            <p className='underfrequency-disturbance-empty'>Tidak ada disturbance. Preset dimulai seimbang pada frekuensi nominal.</p>
           )}
         </div>
 
         <div className='underfrequency-section-actions'>
-          <span>Add generator loss</span>
+          <span>Tambahkan generator loss</span>
           <div>
             {state.study.generators.map((gen) => (
               <button
@@ -363,14 +385,15 @@ export function UnderfrequencyParameterPanel({
         onOpenChange={(open) => setOpen('simulation', open)}
         badge={!valid ? 'BLOCKED' : state.playbackState}
         badgeTone={!valid ? 'warning' : state.playbackState === 'COMPLETE' ? 'success' : 'neutral'}
+        intl={PARAM_GROUP_INTL}
         summary={(
-          <SectionSummary columns={2} ariaLabel='Simulation control summary'>
+          <SectionSummary columns={2} ariaLabel='Ringkasan kontrol simulasi'>
             <SummaryMetric label='Speed' value={`${state.simulationSpeed}×`} />
             <SummaryMetric label='Run state' value={state.playbackState} />
           </SectionSummary>
         )}
       >
-        <div className='underfrequency-speed-control' role='group' aria-label='Simulation playback speed'>
+        <div className='underfrequency-speed-control' role='group' aria-label='Kecepatan pemutaran simulasi'>
           <span>Playback speed</span>
           <div>
             {([1, 5, 10] as const).map((speed: UnderfrequencyPlaybackSpeed) => (
@@ -378,7 +401,7 @@ export function UnderfrequencyParameterPanel({
                 key={speed}
                 type='button'
                 aria-pressed={state.simulationSpeed === speed}
-                aria-label={`Set playback speed ${speed}×`}
+                aria-label={`Set kecepatan playback ${speed}×`}
                 data-active={state.simulationSpeed === speed ? 'true' : 'false'}
                 onClick={() => dispatch({ type: 'SET_SIMULATION_SPEED', speed })}
               >

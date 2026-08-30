@@ -3,6 +3,12 @@ import { useId, useState, type ReactNode } from 'react';
 type BadgeTone = 'neutral' | 'info' | 'warning' | 'danger' | 'success';
 type SectionVariant = 'parameter' | 'support';
 
+/** Localizable toggle title (English defaults). */
+export interface ParameterGroupIntl {
+  hideTitle?: (title: string) => string;
+  showTitle?: (title: string) => string;
+}
+
 interface Props {
   title: string;
   defaultOpen?: boolean;
@@ -12,6 +18,7 @@ interface Props {
   badge?: ReactNode;
   badgeTone?: BadgeTone;
   variant?: SectionVariant;
+  intl?: ParameterGroupIntl;
   children: ReactNode;
 }
 
@@ -24,10 +31,14 @@ export function ParameterGroup({
   badge,
   badgeTone = 'neutral',
   variant = 'parameter',
+  intl = {},
   children,
 }: Props) {
   const [localOpen, setLocalOpen] = useState(defaultOpen);
   const open = controlledOpen ?? localOpen;
+  const toggleTitle = open
+    ? intl.hideTitle?.(title) ?? `Hide ${title}`
+    : intl.showTitle?.(title) ?? `Show ${title}`;
   const contentId = useId();
 
   const setOpen = (next: boolean) => {
@@ -42,7 +53,7 @@ export function ParameterGroup({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls={contentId}
-        title={open ? `Hide ${title}` : `Show ${title}`}
+        title={toggleTitle}
         className='parameter-group-header w-full px-2.5 py-2 text-left text-[10px] font-bold uppercase tracking-[0.085em] transition'
       >
         <span className='parameter-group-title-slot'>

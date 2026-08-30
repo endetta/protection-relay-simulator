@@ -5,3 +5,6 @@ dist
 
 # Machine-local Claude Code permissions/settings (auto-modified per session)
 .claude/settings.local.json
+
+# Teaching workspace (personal, not part of the distributed project)
+.teach/

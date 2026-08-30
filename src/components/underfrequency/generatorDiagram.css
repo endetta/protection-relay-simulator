@@ -72,9 +72,9 @@
 .underfrequency-gen-diagram-row {
   display: grid;
   min-width: 0;
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.2fr);
   align-items: center;
-  gap: 10px;
+  gap: 8px 10px;
   border: 1px solid var(--sim-border);
   border-left: 3px solid var(--sim-border-strong);
   border-radius: 5px;
@@ -122,13 +122,29 @@
   gap: 2px;
 }
 
+/* Stats band: RPM / Droop / Headroom live on their own full-width row so the
+   4-column main grid never overflows into an implicit second row. */
+.underfrequency-gen-row-stats {
+  grid-column: 1 / -1;
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+  border-top: 1px dashed var(--sim-border-soft);
+  padding-top: 6px;
+}
+
 .underfrequency-gen-row-metric > span,
 .underfrequency-gen-row-stat > span {
+  overflow: hidden;
   color: var(--sim-text-muted);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .05em;
+  text-overflow: ellipsis;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .underfrequency-gen-row-metric > b {
