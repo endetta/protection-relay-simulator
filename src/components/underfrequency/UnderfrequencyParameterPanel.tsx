@@ -238,6 +238,12 @@ export function UnderfrequencyParameterPanel({
         onOpenChange={(open) => setOpen('relay', open)}
         badge={state.study.relay.enabled ? 'ENABLED' : 'DISABLED'}
         badgeTone={state.study.relay.enabled ? 'success' : 'neutral'}
+        summary={(
+          <SectionSummary columns={2} ariaLabel='Relay summary'>
+            <SummaryMetric label='Function' value='81U' />
+            <SummaryMetric label='Status' value={state.study.relay.enabled ? 'Enabled' : 'Disabled'} />
+          </SectionSummary>
+        )}
       >
         <div className='underfrequency-relay-readout'>
           <span>Model</span>

@@ -24,7 +24,7 @@
 
 .underfrequency-ftc-heading > span {
   color: var(--sim-text-muted);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -53,7 +53,7 @@
   background: var(--sim-panel);
   padding: 3px 8px;
   color: var(--sim-text-secondary);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -78,7 +78,7 @@
   padding: 7px 12px;
   border-bottom: 1px solid var(--sim-border-soft);
   color: var(--sim-text-muted);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -110,7 +110,7 @@
   background: var(--sim-panel);
   padding: 3px 8px;
   color: var(--sim-text-secondary);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .04em;
 }
@@ -130,13 +130,13 @@
   gap: 3px;
   margin: 0;
   color: var(--sim-text-secondary);
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .underfrequency-ftc-story-narrative b {
   color: var(--sim-text);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .04em;
   text-transform: uppercase;
@@ -147,12 +147,12 @@
   gap: 3px;
   padding: 14px 12px;
   color: var(--sim-text-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .underfrequency-ftc-invalid b {
   color: var(--sim-amber);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .06em;
 }
 
@@ -183,7 +183,7 @@
   padding: 3px 10px;
   color: var(--sim-text-muted);
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -219,7 +219,7 @@
   gap: 10px;
   padding: 4px 6px 6px;
   color: var(--sim-text-muted);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -249,7 +249,7 @@
 
 .underfrequency-ftc-tick {
   fill: var(--sim-text-muted);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .underfrequency-ftc-axis {
@@ -259,7 +259,7 @@
 
 .underfrequency-ftc-axis-label {
   fill: var(--sim-text-secondary);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .underfrequency-ftc-plot-bg {

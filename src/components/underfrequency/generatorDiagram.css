@@ -24,7 +24,7 @@
 
 .underfrequency-gen-diagram-heading > span {
   color: var(--sim-text-muted);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .07em;
   text-transform: uppercase;
@@ -45,7 +45,7 @@
   gap: 8px;
   color: var(--sim-text-secondary);
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 10.5px;
+  font-size: 12px;
 }
 
 .underfrequency-gen-diagram-message {
@@ -53,13 +53,13 @@
   gap: 3px;
   padding: 14px 12px;
   color: var(--sim-text-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .underfrequency-gen-diagram-message b {
   color: var(--sim-amber);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .06em;
 }
 
@@ -105,8 +105,8 @@
   justify-self: start;
   border: 1px solid var(--sim-border);
   border-radius: 3px;
-  padding: 1px 5px;
-  font-size: 8px;
+  padding: 1px 6px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .06em;
 }
@@ -125,7 +125,7 @@
 .underfrequency-gen-row-metric > span,
 .underfrequency-gen-row-stat > span {
   color: var(--sim-text-muted);
-  font-size: 8px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -150,7 +150,7 @@
 .underfrequency-gen-row-stat > small {
   overflow: hidden;
   color: var(--sim-text-dim);
-  font-size: 9px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

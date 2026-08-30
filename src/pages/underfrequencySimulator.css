@@ -34,14 +34,31 @@
   background: var(--sim-panel-raised);
   padding: 8px 10px;
   color: var(--sim-text-secondary);
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.4;
 }
 
 .underfrequency-page-invalid b {
   color: var(--sim-amber);
-  font-size: 8.5px;
+  font-size: 11px;
   letter-spacing: .055em;
+}
+
+/* Step-guide focus: the non-focused columns are softly dimmed to signal the
+   current step, but never locked — hover/focus restores full emphasis. */
+.underfrequency-simulator-page .simulator-column {
+  transition: opacity 160ms ease, filter 160ms ease;
+}
+.underfrequency-simulator-page .simulator-column[data-step-active='false'] {
+  opacity: .5;
+}
+.underfrequency-simulator-page .simulator-column[data-step-active='false']:hover,
+.underfrequency-simulator-page .simulator-column[data-step-active='false']:focus-within {
+  opacity: 1;
+}
+/* The stepper guide reads larger than the plain anchor nav (>12px). */
+.underfrequency-simulator-page .simulator-anchor-nav a {
+  font-size: 12px;
 }
 
 /* Rebalance the Live column to be the dominant visual (target ~52% on
@@ -89,7 +106,7 @@
 .underfrequency-help-grid h3 {
   margin: 0 0 5px;
   color: var(--sim-accent);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .065em;
   text-transform: uppercase;
@@ -98,7 +115,7 @@
 .underfrequency-help-grid p {
   margin: 0;
   color: var(--sim-text-secondary);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.55;
 }
 

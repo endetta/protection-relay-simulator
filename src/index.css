@@ -51,6 +51,10 @@
   --sim-shadow-tooltip: 0 14px 34px rgba(0, 0, 0, 0.58);
   --sim-summary-bg: #121b23;
   --sim-summary-border: #263542;
+  /* Typography legibility floor. Persistent labels/ringkasan must be >= --sim-text-label;
+     key values and status must be >= --sim-text-value. */
+  --sim-text-label: 12px;
+  --sim-text-value: 14px;
 }
 
 /* Light mode tokens — applied via .simulator-theme-light on the root container.
@@ -297,7 +301,7 @@ body {
   padding: 0 0 8px;
   border-bottom: 1px solid var(--sim-border);
   color: var(--sim-text);
-  font-size: 11px;
+  font-size: 13px;
   line-height: 1.2;
   font-weight: 800;
   letter-spacing: .105em;
@@ -627,7 +631,7 @@ body {
   padding: 5px 7px;
   border-radius: 4px;
   color: var(--sim-text-muted);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 750;
   letter-spacing: .055em;
   text-align: center;
@@ -643,6 +647,51 @@ body {
   background: var(--sim-accent-bg);
   color: var(--sim-accent);
   box-shadow: inset 0 -2px 0 var(--sim-accent);
+}
+/* Numbered step guide (optional "steps" mode). The number chip makes the flow
+   explicit while the nav stays compact; [aria-current] still marks scroll position. */
+.simulator-anchor-nav .simulator-step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 6px;
+  border: 1px solid var(--sim-border-strong);
+  border-radius: 999px;
+  color: var(--sim-text-muted);
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  line-height: 1;
+  vertical-align: middle;
+}
+.simulator-anchor-nav a[aria-current='true'] .simulator-step-num {
+  border-color: var(--sim-accent);
+  color: var(--sim-accent);
+}
+.simulator-anchor-nav .simulator-step-label { vertical-align: middle; }
+.simulator-step-show-all {
+  flex: none;
+  min-height: 22px;
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+  background: var(--sim-panel);
+  padding: 3px 9px;
+  color: var(--sim-text-muted);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .045em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+}
+.simulator-step-show-all:hover,
+.simulator-step-show-all:focus-visible {
+  border-color: var(--sim-accent);
+  background: var(--sim-accent-bg);
+  color: var(--sim-text);
+  outline: none;
 }
 .simulator-column-heading {
   display: flex;
@@ -667,7 +716,7 @@ body {
   background: #121b23;
   padding: 3px 7px;
   color: var(--sim-text-muted);
-  font-size: 8.5px;
+  font-size: 11px;
   font-weight: 750;
   letter-spacing: .045em;
   line-height: 1.2;
@@ -717,10 +766,10 @@ body {
   flex: none;
   border: 1px solid var(--sim-border);
   border-radius: 999px;
-  padding: 1px 5px;
+  padding: 2px 7px;
   color: var(--sim-text-muted);
   background: var(--sim-panel);
-  font-size: 7.5px;
+  font-size: var(--sim-text-label);
   line-height: 1.35;
   letter-spacing: .05em;
 }
@@ -908,7 +957,7 @@ body {
 .section-summary-entity-title {
   overflow: hidden;
   color: #8fa0af;
-  font-size: 7.6px;
+  font-size: var(--sim-text-label);
   font-weight: 750;
   letter-spacing: .06em;
   line-height: 1.25;
@@ -928,7 +977,7 @@ body {
 .section-summary-text-value {
   overflow: hidden;
   color: #e2e9ef;
-  font-size: 9.7px;
+  font-size: var(--sim-text-value);
   font-weight: 600;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -937,13 +986,13 @@ body {
 .section-summary-unit {
   flex: none;
   color: #8697a7;
-  font-size: 7.8px;
+  font-size: var(--sim-text-label);
   line-height: 1.25;
 }
 .section-summary-sublabel {
   margin-top: 2px;
   color: #8292a2;
-  font-size: 7.6px;
+  font-size: var(--sim-text-label);
   line-height: 1.3;
 }
 .section-summary-entity {
@@ -951,7 +1000,7 @@ body {
 }
 .section-summary-entity-primary {
   margin-top: 2px;
-  font-size: 10.1px;
+  font-size: var(--sim-text-value);
 }
 .section-summary-entity-secondary {
   display: flex;
@@ -962,7 +1011,7 @@ body {
   padding-top: 4px;
   border-top: 1px solid rgba(61,81,99,.5);
   color: #8798a7;
-  font-size: 7.5px;
+  font-size: var(--sim-text-label);
   font-weight: 700;
   letter-spacing: .045em;
   text-transform: uppercase;
@@ -971,7 +1020,7 @@ body {
   min-width: 0;
   overflow: hidden;
   color: #cdd7df;
-  font-size: 8.4px;
+  font-size: var(--sim-text-label);
   font-weight: 600;
   letter-spacing: 0;
   text-overflow: ellipsis;

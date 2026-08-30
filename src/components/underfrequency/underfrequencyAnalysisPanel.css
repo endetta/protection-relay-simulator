@@ -14,25 +14,25 @@
   background: var(--sim-panel);
   padding: 8px 10px;
   color: var(--sim-amber);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .underfrequency-analysis-invalid b {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: .055em;
 }
 
 .underfrequency-analysis-empty {
   color: var(--sim-text-muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .underfrequency-analysis-description {
   margin: 0;
   color: var(--sim-text-secondary);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 
@@ -46,13 +46,13 @@
   background: var(--sim-panel);
   padding: 8px 9px;
   color: var(--sim-text-secondary);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .underfrequency-analysis-pln b {
   color: var(--sim-amber);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: .05em;
 }
 
@@ -77,7 +77,7 @@
 
 .underfrequency-analysis-checks span {
   color: var(--sim-text-muted);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -86,13 +86,13 @@
 .underfrequency-analysis-checks b {
   color: var(--sim-text);
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .underfrequency-analysis-checks small {
   overflow: hidden;
   color: var(--sim-text-secondary);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.4;
   text-overflow: ellipsis;
 }
@@ -120,7 +120,7 @@
 
 .underfrequency-analysis-tiles span {
   color: var(--sim-text-muted);
-  font-size: 8.5px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -161,13 +161,13 @@
 
 .underfrequency-analysis-phases time {
   color: var(--sim-text-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .underfrequency-analysis-phases b {
   overflow: hidden;
   color: var(--sim-text);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -175,9 +175,12 @@
 
 .underfrequency-analysis-phases span {
   grid-column: 1 / -1;
+  overflow: hidden;
   color: var(--sim-text-secondary);
-  font-size: 10.5px;
+  font-size: 12px;
   line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .underfrequency-analysis-calculation {
@@ -215,13 +218,13 @@
 
 .underfrequency-analysis-events span {
   color: var(--sim-text-muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .underfrequency-analysis-events b {
   overflow: hidden;
   color: var(--sim-text);
-  font-size: 10.5px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -229,7 +232,7 @@
 .underfrequency-analysis-events small {
   grid-column: 1 / -1;
   color: var(--sim-text-dim);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 @media (max-width: 380px) {

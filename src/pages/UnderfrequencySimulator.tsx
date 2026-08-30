@@ -37,6 +37,9 @@ export function UnderfrequencySimulator() {
   const [parameterDraftValid, setParameterDraftValid] = useState(true);
   const [helpOpen, setHelpOpen] = useState(false);
   const [syncKey, setSyncKey] = useState(0);
+  // Step-guide focus: Langkah 1 (Parameters) is focused on load; other columns
+  // are softly dimmed but never locked. null -> "Show all" clears the focus.
+  const [focusStep, setFocusStep] = useState<string | null>('sim-parameters');
 
   const [parameterSections, setParameterSections] = useState<Record<string, boolean>>(() => ({
     study: true,
@@ -165,6 +168,13 @@ export function UnderfrequencySimulator() {
           parameters={parameters}
           simulation={simulation}
           analysis={analysis}
+          steps={[
+            { id: 'sim-parameters', num: '1', label: 'Studi & Parameter' },
+            { id: 'sim-live', num: '2', label: 'Simulasi' },
+            { id: 'sim-analysis', num: '3', label: 'Analisis' },
+          ]}
+          activeStep={focusStep}
+          onStepChange={setFocusStep}
           parametersAction={<button type='button' className='section-utility-button' onClick={() => setParameterSectionGroup(!anyParameterOpen)}>{anyParameterOpen ? 'Collapse all' : 'Expand all'}</button>}
           analysisAction={<button type='button' className='section-utility-button' onClick={() => setAnalysisSectionGroup(!anyAnalysisOpen)}>{anyAnalysisOpen ? 'Collapse all' : 'Expand all'}</button>}
         />
