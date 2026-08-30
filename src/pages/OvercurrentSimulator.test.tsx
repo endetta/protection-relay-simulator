@@ -48,8 +48,8 @@ describe('O15 Overcurrent page / route integration contracts', () => {
     expect(markup).toContain('Distance Relay');
     expect(markup).toContain('Underfrequency Relay');
     expect(markup).toContain('data-available="true"');
-    expect((markup.match(/data-available="true"/g) ?? []).length).toBe(3);
-    expect((markup.match(/data-available="false"/g) ?? []).length).toBe(1);
+    expect((markup.match(/data-available="true"/g) ?? []).length).toBe(4);
+    expect((markup.match(/data-available="false"/g) ?? []).length).toBe(0);
   });
 
   it('preserves the Differential header defaults while allowing module-specific Overcurrent identity', () => {
