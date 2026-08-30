@@ -9,5 +9,8 @@ dist
 # Isolated git worktrees for parallel Claude Code sessions — never part of the working tree
 .claude/worktrees/
 
+# Runtime session-guard locks (SessionStart/SessionEnd; per-PID, never committed)
+.claude/active-sessions/
+
 # Teaching workspace (personal, not part of the distributed project)
 .teach/

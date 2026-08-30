@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Hard gate: reject a commit on the SHARED main working tree when two or more
+# Claude sessions are live on it at once. One session (the normal case) is
+# always allowed through — the gate only trips on the actual parallel hazard.
+#
+# Reasoning for ">= 2": pre-commit runs without a session_id (git spawns it),
+# so "reject if ANY other lock exists" would misfire on a single session whose
+# own lock is present. Requiring >= 2 live locks trips exactly when two+
+# sessions share the tree, and never disturbs a lone committer.
+#
+# In a worktree ([ -f .git ]) the gate always passes: that is the correct,
+# isolated place to work.
+#
+# Escape hatch (documented in CLAUDE.md): git commit --no-verify (explicit).
+
+set -u
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=session-lib.sh
+source "$SCRIPT_DIR/../.claude/hooks/session-lib.sh"
+
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+LOCKDIR="$REPO_ROOT/.claude/active-sessions"
+
+# Worktree: pass without any check.
+if [ -f "$REPO_ROOT/.git" ]; then
+  exit 0
+fi
+
+# Main tree: the real working tree has .git as a directory.
+if [ ! -d "$REPO_ROOT/.git" ]; then
+  exit 0
+fi
+
+count="$(live_lock_count "$LOCKDIR")"
+if [ "$count" -ge 2 ]; then
+  cat >&2 <<'EOF'
+BLOCKED: 2+ Claude sessions are live on this shared main working tree at once.
+
+Committing here can sweep up another session's staged files and produce the
+mixed/duplicate commits this repo hit before. Move to an isolated worktree first:
+
+  bash scripts/parallel-session.sh <your-task-name>
+
+Work inside .claude/worktrees/<your-task-name> (own git index, own branch),
+commit there, push the branch, then merge via PR. If you are deliberately
+committing here anyway, run the exact command again with --no-verify (documented
+escape hatch — only for explicit, deliberate cases).
+EOF
+  exit 1
+fi
+
+exit 0
