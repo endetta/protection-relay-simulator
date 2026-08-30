@@ -20,6 +20,18 @@ export function validateRange(value: number, min?: number, max?: number): boolea
   return true;
 }
 
+/** Format a frequency (Hz) with a fixed number of decimals; non-finite → '—'. */
+export function formatFrequencyHz(value: number, decimals = 2): string {
+  if (!Number.isFinite(value)) return '—';
+  return value.toFixed(decimals);
+}
+
+/** Format a per-unit droop (e.g. 0.05) as a percentage string ("5 %"). */
+export function formatPerUnitDroop(droopPu: number): string {
+  if (!Number.isFinite(droopPu)) return '—';
+  return `${(droopPu * 100).toFixed(1)} %`;
+}
+
 export interface EngineeringDraftResult {
   value: number | null;
   valid: boolean;
