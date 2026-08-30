@@ -3,6 +3,15 @@ import { Link } from 'react-router-dom';
 type DifferentialSimulatorStatus = 'OPERATE' | 'RESTRAIN' | 'INVALID';
 export type SimulatorHeaderTone = 'operate' | 'restrain' | 'invalid' | 'info' | 'neutral';
 
+/** Localizable header chrome (English defaults; other modules unchanged). */
+interface SimulatorHeaderIntl {
+  scenarioPrefix?: string;
+  resetLabel?: string;
+  homeAriaLabel?: string;
+  homeTitle?: string;
+  homeText?: string;
+}
+
 interface Props {
   scenario: string;
   /** Existing Differential status remains supported; other modules may supply a module-specific label. */
@@ -17,6 +26,7 @@ interface Props {
   enableThemeToggle?: boolean;
   themeMode?: 'dark' | 'light';
   onThemeToggle?: () => void;
+  intl?: SimulatorHeaderIntl;
 }
 
 function defaultTone(status: string): SimulatorHeaderTone {
@@ -38,20 +48,29 @@ export function SimulatorHeader({
   enableThemeToggle = false,
   themeMode = 'dark',
   onThemeToggle,
+  intl = {},
 }: Props) {
   const tone = statusTone ?? defaultTone(status);
   const label = statusLabel ?? (status === 'INVALID' ? 'INPUT INVALID' : status);
+  const i18n = {
+    scenarioPrefix: 'Scenario: ',
+    resetLabel: 'Reset',
+    homeAriaLabel: 'Back to Protection System homepage',
+    homeTitle: 'Back to homepage',
+    homeText: 'Protection System Simulator',
+    ...intl,
+  };
 
   return (
     <header className='simulator-header flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b px-4 py-2'>
       <div className='flex min-w-0 items-baseline gap-2 text-[12.5px] font-semibold uppercase tracking-[0.07em]'>
-        <Link to='/' className='simulator-home-button' aria-label='Back to Protection System homepage' title='Back to homepage'>Protection System Simulator</Link>
+        <Link to='/' className='simulator-home-button' aria-label={i18n.homeAriaLabel} title={i18n.homeTitle}>{i18n.homeText}</Link>
         <span className='simulator-header-separator'>/</span>
         <h1 className='simulator-header-module text-inherit font-inherit'>{moduleLabel}</h1>
       </div>
       <div className='flex min-w-0 flex-wrap items-center justify-end gap-3'>
         <span className='simulator-header-scenario text-[10.5px] uppercase tracking-[0.065em]'>
-          Scenario: <span title={scenario}>{scenario}</span>
+          {i18n.scenarioPrefix}<span title={scenario}>{scenario}</span>
         </span>
         <span className='simulator-status flex items-center gap-1.5 rounded border px-2 py-1 text-[10.5px] font-bold uppercase tracking-[0.05em]' data-tone={tone} role='status' aria-live='polite' aria-atomic='true'>
           <span className='simulator-status-dot h-1.5 w-1.5 rounded-full'></span>
@@ -81,7 +100,7 @@ export function SimulatorHeader({
           </button>
         )}
         <button type='button' onClick={onReset} className='simulator-header-action rounded border px-2 py-1 text-[10.5px] font-semibold uppercase tracking-[0.05em]'>
-          Reset
+          {i18n.resetLabel}
         </button>
         {onHelp && (
           <button type='button' onClick={onHelp} aria-label={helpAriaLabel} className='simulator-header-action rounded border px-2 py-1 text-[11px]'>

@@ -31,10 +31,10 @@ export function validateUnderfrequencyStudyDefinition(
 ): DomainEvaluation<UnderfrequencyStudyDefinition> {
   const issues: DomainIssue[] = [];
 
-  if (!study.id.trim()) issues.push(issue('INVALID_TOPOLOGY', 'id', 'Study preset ID is required.'));
-  if (!study.label.trim()) issues.push(issue('INVALID_TOPOLOGY', 'label', 'Study label is required.'));
-  if (!study.description.trim()) issues.push(issue('INVALID_TOPOLOGY', 'description', 'Study description is required.'));
-  if (!study.relay?.modelLabel.trim()) issues.push(issue('INVALID_TOPOLOGY', 'relay.modelLabel', 'Relay model label is required.'));
+  if (!study.id.trim()) issues.push(issue('INVALID_TOPOLOGY', 'id', 'ID preset studi wajib diisi.'));
+  if (!study.label.trim()) issues.push(issue('INVALID_TOPOLOGY', 'label', 'Label studi wajib diisi.'));
+  if (!study.description.trim()) issues.push(issue('INVALID_TOPOLOGY', 'description', 'Deskripsi studi wajib diisi.'));
+  if (!study.relay?.modelLabel.trim()) issues.push(issue('INVALID_TOPOLOGY', 'relay.modelLabel', 'Label model relay wajib diisi.'));
 
   issues.push(...validateUnderfrequencySystem(study.system));
   issues.push(...validateUnderfrequencyGenerators(study.generators));
@@ -45,16 +45,16 @@ export function validateUnderfrequencyStudyDefinition(
   for (const step of study.disturbanceSteps) {
     const path = `disturbanceSteps.${step.id}`;
     if (!finiteNonNegative(step.timeSec)) {
-      issues.push(issue('NUMERICAL_RANGE', `${path}.timeSec`, 'Disturbance time must be finite and >= 0 s.'));
+      issues.push(issue('NUMERICAL_RANGE', `${path}.timeSec`, 'Waktu disturbance harus finite dan >= 0 s.'));
     }
     if (step.kind !== 'LOAD_STEP') {
       if (!step.generatorId) {
-        issues.push(issue('INVALID_TOPOLOGY', `${path}.generatorId`, `${step.kind} requires a generatorId.`));
+        issues.push(issue('INVALID_TOPOLOGY', `${path}.generatorId`, `${step.kind} memerlukan generatorId.`));
       } else if (!generatorIds.has(step.generatorId)) {
-        issues.push(issue('INVALID_TOPOLOGY', `${path}.generatorId`, `Unknown generator ${step.generatorId}.`));
+        issues.push(issue('INVALID_TOPOLOGY', `${path}.generatorId`, `Generator ${step.generatorId} tidak dikenal.`));
       }
     } else if (!Number.isFinite(step.mw)) {
-      issues.push(issue('NUMERICAL_RANGE', `${path}.mw`, 'LOAD_STEP requires a finite mw magnitude.'));
+      issues.push(issue('NUMERICAL_RANGE', `${path}.mw`, 'LOAD_STEP memerlukan besaran mw yang finite.'));
     }
   }
 

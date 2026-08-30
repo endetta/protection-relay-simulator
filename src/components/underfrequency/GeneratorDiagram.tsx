@@ -37,7 +37,7 @@ export function GeneratorDiagram({ snapshot, study, className = '' }: GeneratorD
   }, [snapshot, study.generators, study.system.fNominalHz]);
 
   return (
-    <section className={`underfrequency-gen-diagram simulator-theme ${className}`.trim()} aria-label='Generator response diagram'>
+    <section className={`underfrequency-gen-diagram simulator-theme ${className}`.trim()} aria-label='Diagram respons generator'>
       <header className='underfrequency-gen-diagram-header'>
         <div className='underfrequency-gen-diagram-heading'>
           <span>Per-unit response</span>
@@ -52,7 +52,7 @@ export function GeneratorDiagram({ snapshot, study, className = '' }: GeneratorD
       {!model || model.status === 'INVALID' ? (
         <div className='underfrequency-gen-diagram-message' data-tone='danger' role='status'>
           <b>NO SNAPSHOT</b>
-          <span>Run the underfrequency study to see per-generator governor response.</span>
+          <span>Jalankan studi underfrequency untuk melihat respon governor per-generator.</span>
         </div>
       ) : (
         <div className='underfrequency-gen-diagram-rows'>
@@ -89,20 +89,22 @@ export function GeneratorDiagram({ snapshot, study, className = '' }: GeneratorD
                   <b className='font-eng'>{row.saturated ? `${formatEngineeringNumber(row.governorResponseMw)} MW · SAT` : formatEngineeringNumber(row.governorResponseMw)} MW</b>
                 </div>
 
-                <div className='underfrequency-gen-row-stat'>
-                  <span>RPM</span>
-                  <b className='font-eng'>{formatEngineeringNumber(row.rpm)}</b>
-                  <small>{row.poles} pole</small>
-                </div>
-                <div className='underfrequency-gen-row-stat'>
-                  <span>Droop</span>
-                  <b className='font-eng'>{formatEngineeringNumber(row.droopPu * 100)}%</b>
-                  <small>H {formatEngineeringNumber(row.inertiaSec)} s</small>
-                </div>
-                <div className='underfrequency-gen-row-stat'>
-                  <span>Headroom</span>
-                  <b className='font-eng'>{formatEngineeringNumber(row.headroomMw)} MW</b>
-                  <small>rated {formatEngineeringNumber(row.mwRated)}</small>
+                <div className='underfrequency-gen-row-stats'>
+                  <div className='underfrequency-gen-row-stat'>
+                    <span>RPM</span>
+                    <b className='font-eng'>{formatEngineeringNumber(row.rpm)}</b>
+                    <small>{row.poles} pole</small>
+                  </div>
+                  <div className='underfrequency-gen-row-stat'>
+                    <span>Droop</span>
+                    <b className='font-eng'>{formatEngineeringNumber(row.droopPu * 100)}%</b>
+                    <small>H {formatEngineeringNumber(row.inertiaSec)} s</small>
+                  </div>
+                  <div className='underfrequency-gen-row-stat'>
+                    <span>Headroom</span>
+                    <b className='font-eng'>{formatEngineeringNumber(row.headroomMw)} MW</b>
+                    <small>rated {formatEngineeringNumber(row.mwRated)}</small>
+                  </div>
                 </div>
               </div>
             );

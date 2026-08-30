@@ -34,11 +34,11 @@ export function validateUnderfrequencyParameterState(
   if (structural.status === 'INVALID') issues.push(...structural.issues);
 
   if (state.presetId !== state.study.id) {
-    issues.push(issue('INVALID_TOPOLOGY', 'presetId', 'State and study definition use different preset IDs.'));
+    issues.push(issue('INVALID_TOPOLOGY', 'presetId', 'State dan definisi studi menggunakan preset ID yang berbeda.'));
   }
   const playback = state.playbackState;
   if (playback !== 'IDLE' && playback !== 'RUNNING' && playback !== 'PAUSED' && playback !== 'COMPLETE' && playback !== 'INVALID') {
-    issues.push(issue('NUMERICAL_RANGE', 'playbackState', 'Playback state is out of range.'));
+    issues.push(issue('NUMERICAL_RANGE', 'playbackState', 'Playback state di luar rentang.'));
   }
 
   return issues.length > 0

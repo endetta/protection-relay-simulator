@@ -77,7 +77,7 @@ function invalidModel(run: UnderfrequencyTimelineRun | null, study: Underfrequen
     status: 'INVALID',
     headline: {
       label: 'INPUT INVALID',
-      detail: 'Correct the invalid engineering parameter draft before the analysis can be evaluated.',
+      detail: 'Perbaiki draf parameter engineering yang tidak valid sebelum analisis dapat dievaluasi.',
       tone: 'warning',
     },
     studyLabel: study.label,
@@ -164,19 +164,19 @@ export function buildUnderfrequencyAnalysisModel(
   if (collapse) {
     headline = {
       label: 'COLLAPSE',
-      detail: `Frequency unrecoverable at ${numberText(run?.finalTimeSec)} s; all governor headroom exhausted.`,
+      detail: `Frekuensi tidak dapat dipulihkan pada ${numberText(run?.finalTimeSec)} s; semua headroom governor habis.`,
       tone: 'danger',
     };
   } else if (totalShedMw > 0) {
     headline = {
       label: `UFLS ${operatedStages} STAGE${operatedStages === 1 ? '' : 'S'} OPERATED`,
-      detail: `${numberText(totalShedMw, 1)} MW shed; frequency arrested to ${numberText(finalFrequency)} Hz.`,
+      detail: `${numberText(totalShedMw, 1)} MW shed; frekuensi dihentikan di ${numberText(finalFrequency)} Hz.`,
       tone: 'danger',
     };
   } else {
     headline = {
       label: 'RESTRAIN',
-      detail: `No UFLS operated; frequency at ${numberText(finalFrequency)} Hz.`,
+      detail: `Tidak ada UFLS yang beroperasi; frekuensi di ${numberText(finalFrequency)} Hz.`,
       tone: 'success',
     };
   }
@@ -205,10 +205,10 @@ export function buildUnderfrequencyAnalysisModel(
       label: 'UFLS adequacy',
       status: collapse ? 'FAIL' : operatedStages > 0 ? 'PASS' : 'NOT_EVALUABLE',
       detail: collapse
-        ? 'Shedding could not arrest the deficit.'
+        ? 'Shedding tidak dapat menghentikan defisit.'
         : operatedStages > 0
-          ? `${operatedStages} stage(s) shed ${numberText(totalShedMw, 1)} MW.`
-          : 'No stage needed; governor/droop covers the deficit.',
+          ? `${operatedStages} stage(s) melepas ${numberText(totalShedMw, 1)} MW.`
+          : 'Tidak perlu stage; governor/droop menutupi defisit.',
     },
   ];
 
@@ -256,7 +256,7 @@ export function buildUnderfrequencyAnalysisModel(
     calculationDetails.push(`Total UFLS shed = ${numberText(totalShedMw, 1)} MW across ${operatedStages} stage(s).`);
   }
   if (collapse) {
-    calculationDetails.push('Governor slope exhausted (β_pu → 0); no equilibrium exists — COLLAPSE.');
+    calculationDetails.push('Kemiringan governor habis (β_pu → 0); tidak ada equilibrium — COLLAPSE.');
   }
 
   // Phase narrative from the timeline events (if available).
@@ -302,7 +302,7 @@ function buildPhases(
       label: 'Persiapkan',
       timeSec: first.engineeringTimeSec,
       tone: 'success',
-      narrative: `Balanced island at ${first.frequencyHz.toFixed(2)} Hz; ${first.deficitMw.toFixed(0)} MW deficit.`,
+      narrative: `Island seimbang pada ${first.frequencyHz.toFixed(2)} Hz; defisit ${first.deficitMw.toFixed(0)} MW.`,
     });
   }
 
@@ -314,7 +314,7 @@ function buildPhases(
       label: 'Defisit & Inersia',
       timeSec: trough.engineeringTimeSec,
       tone: collapsing ? 'danger' : 'warning',
-      narrative: `Frequency falls to ${trough.frequencyHz.toFixed(2)} Hz (df/dt ≈ ${trough.rocofHzPerSec.toFixed(2)} Hz/s).`,
+      narrative: `Frekuensi turun ke ${trough.frequencyHz.toFixed(2)} Hz (df/dt ≈ ${trough.rocofHzPerSec.toFixed(2)} Hz/s).`,
     });
   }
 
@@ -324,7 +324,7 @@ function buildPhases(
       label: 'UFLS',
       timeSec: trough.engineeringTimeSec,
       tone: 'danger',
-      narrative: `UFLS latched, shedding ${numberText(totalShedMw, 1)} MW of load to arrest the decay.`,
+      narrative: `UFLS latch, melepas ${numberText(totalShedMw, 1)} MW beban untuk menghentikan penurunan.`,
     });
   }
 
@@ -334,7 +334,7 @@ function buildPhases(
       label: 'Kolaps',
       timeSec: run.finalTimeSec,
       tone: 'danger',
-      narrative: 'Frequency runs away; governor + UFLS cannot arrest the deficit.',
+      narrative: 'Frekuensi lepas kendali; governor + UFLS tidak dapat menghentikan defisit.',
     });
   } else if (recovery) {
     phases.push({
@@ -342,7 +342,7 @@ function buildPhases(
       label: 'Recovery',
       timeSec: run.finalTimeSec,
       tone: 'success',
-      narrative: `Frequency recovers to ${run.finalFrequencyHz?.toFixed(2)} Hz steady state.`,
+      narrative: `Frekuensi pulih ke ${run.finalFrequencyHz?.toFixed(2)} Hz steady state.`,
     });
   } else {
     phases.push({
@@ -350,7 +350,7 @@ function buildPhases(
       label: 'Settle',
       timeSec: run.finalTimeSec,
       tone: steadyStateTone(run.steadyStateStatus),
-      narrative: `Frequency settles at ${run.finalFrequencyHz?.toFixed(2) ?? '—'} Hz.`,
+      narrative: `Frekuensi settle di ${run.finalFrequencyHz?.toFixed(2) ?? '—'} Hz.`,
     });
   }
 

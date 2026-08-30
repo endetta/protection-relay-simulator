@@ -37,7 +37,7 @@ function renderPanel(presetId: string): string {
 describe('UFR Parameter editor', () => {
   it('renders the collapse-by-default parameter grammar with clear section titles', () => {
     const markup = renderPanel('UFR-02');
-    expect(markup).toContain('Underfrequency relay parameter editor');
+    expect(markup).toContain('Editor parameter relay Underfrequency');
     expect(markup).toContain('Scenario / Preset');
     expect(markup).toContain('System');
     expect(markup).toContain('Relay');
@@ -70,10 +70,10 @@ describe('UFR Parameter editor', () => {
     const markup = renderPanel('UFR-02');
     expect(markup).toContain('GEN LOSS');
     expect(markup).toContain('Manual ΔP (load step)');
-    expect(markup).toContain('Add generator loss');
+    expect(markup).toContain('Tambahkan generator loss');
     expect(markup).toContain('Playback speed');
     expect(markup).toContain('Engineering run');
-    expect(markup).toContain('aria-label="Simulation playback speed"');
+    expect(markup).toContain('aria-label="Kecepatan pemutaran simulasi"');
   });
 
   it('reports invalid state when a non-finite or out-of-range setting is applied', () => {

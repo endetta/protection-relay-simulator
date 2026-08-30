@@ -8,6 +8,13 @@ import {
 import { createPortal } from 'react-dom';
 import './engineeringViewOverlay.css';
 
+/** Localizable overlay chrome (English defaults). */
+interface EngineeringViewOverlayIntl {
+  defaultKicker?: string;
+  closeAriaLabel?: (title: string) => string;
+  closeLabel?: string;
+}
+
 interface EngineeringViewOverlayProps {
   readonly open: boolean;
   readonly title: string;
@@ -16,6 +23,7 @@ interface EngineeringViewOverlayProps {
   readonly returnFocusRef?: RefObject<HTMLElement | null>;
   readonly children: ReactNode;
   readonly className?: string;
+  readonly intl?: EngineeringViewOverlayIntl;
 }
 
 const FOCUSABLE_SELECTOR = [
@@ -30,13 +38,21 @@ const FOCUSABLE_SELECTOR = [
 export function EngineeringViewOverlay({
   open,
   title,
-  kicker = 'Expanded engineering view',
+  kicker,
   onClose,
   returnFocusRef,
   children,
   className = '',
+  intl = {},
 }: EngineeringViewOverlayProps) {
   const titleId = useId();
+  const i18n = {
+    defaultKicker: 'Expanded engineering view',
+    closeLabel: 'Close',
+    closeAriaLabel: (t: string) => `Close expanded ${t}`,
+    ...intl,
+  };
+  const resolvedKicker = kicker ?? i18n.defaultKicker;
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -112,7 +128,7 @@ export function EngineeringViewOverlay({
       >
         <header className='engineering-view-overlay-header'>
           <div>
-            <span>{kicker}</span>
+            <span>{resolvedKicker}</span>
             <h2 id={titleId}>{title}</h2>
           </div>
           <button
@@ -120,9 +136,9 @@ export function EngineeringViewOverlay({
             type='button'
             className='engineering-view-overlay-close'
             onClick={onClose}
-            aria-label={`Close expanded ${title}`}
+            aria-label={i18n.closeAriaLabel(title)}
           >
-            Close
+            {i18n.closeLabel}
           </button>
         </header>
         <div className='engineering-view-overlay-body'>

@@ -10,7 +10,7 @@ const VIEWPORT_GAP = 8;
 const TOOLTIP_GAP = 7;
 const TOOLTIP_WIDTH = 264;
 
-export function InfoDot({ help }: { help: string }) {
+export function InfoDot({ help, ariaLabel = 'Show parameter help' }: { help: string; ariaLabel?: string }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState<TooltipPosition>({ left: VIEWPORT_GAP, top: VIEWPORT_GAP });
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -85,7 +85,7 @@ export function InfoDot({ help }: { help: string }) {
       <button
         ref={buttonRef}
         type='button'
-        aria-label='Show parameter help'
+        aria-label={ariaLabel}
         aria-expanded={open}
         aria-describedby={open ? tooltipId : undefined}
         onClick={(event) => {

@@ -9,9 +9,15 @@ import type {
   UnderfrequencyTimelineRun,
 } from '../../types/underfrequency';
 import { formatEngineeringNumber } from '../../utils/engineering';
-import { ParameterGroup } from '../shared/ParameterGroup';
+import { ParameterGroup, type ParameterGroupIntl } from '../shared/ParameterGroup';
 import { SectionSummary, SummaryMetric } from '../shared/SectionSummary';
 import './underfrequencyAnalysisPanel.css';
+
+/** Indonesian collapse/expand titles for shared ParameterGroup in the analysis panel. */
+const ANALYSIS_GROUP_INTL: ParameterGroupIntl = {
+  hideTitle: (title) => `Ciutkan ${title}`,
+  showTitle: (title) => `Bentangkan ${title}`,
+};
 
 export interface UnderfrequencyAnalysisPanelProps {
   readonly state: UnderfrequencySimulatorState;
@@ -57,24 +63,25 @@ export function UnderfrequencyAnalysisPanel({
   const integratedInputInvalid = !inputDraftValid || model.status === 'INVALID';
   const showInvalidBanner = integratedInputInvalid && inputDraftValid;
   const displayedHeadline = !inputDraftValid
-    ? { label: 'INPUT INVALID / OUTPUT HELD', detail: 'Correct the invalid parameter draft before continuing.', tone: 'warning' as const }
+    ? { label: 'INPUT INVALID / OUTPUT HELD', detail: 'Perbaiki draf parameter yang tidak valid sebelum melanjutkan.', tone: 'warning' as const }
     : model.headline;
 
   return (
-    <aside className={`underfrequency-analysis-panel simulator-theme ${className}`.trim()} aria-label='Underfrequency analysis and learning' role='region'>
+    <aside className={`underfrequency-analysis-panel simulator-theme ${className}`.trim()} aria-label='Analisis dan pembelajaran Underfrequency' role='region'>
       {showInvalidBanner && (
         <div className='underfrequency-analysis-invalid' role='status' aria-live='assertive' aria-atomic='true'>
           <b>INPUT INVALID · OUTPUT HELD</b>
-          <span>{model.issues[0]?.detail ?? 'Correct invalid engineering input before continuing.'}</span>
+          <span>{model.issues[0]?.detail ?? 'Perbaiki input engineering yang tidak valid sebelum melanjutkan.'}</span>
         </div>
       )}
 
       <ParameterGroup
-        title='Relay / System Status'
+        title='Status Relay / System'
         open={sections.status}
         onOpenChange={(open) => setOpen('status', open)}
         badge={displayedHeadline.label}
         badgeTone={TONE_TO_BADGE[displayedHeadline.tone]}
+        intl={ANALYSIS_GROUP_INTL}
         summary={(
           <SectionSummary columns={1}>
             <SummaryMetric label='Status' value={<span className='font-eng'>{displayedHeadline.label}</span>} tone={TONE_TO_BADGE[displayedHeadline.tone]} sublabel={displayedHeadline.detail} />
@@ -86,11 +93,12 @@ export function UnderfrequencyAnalysisPanel({
 
       {model.studyLabel && (
         <ParameterGroup
-          title='Study'
+          title='Studi'
           open={sections.study}
           onOpenChange={(open) => setOpen('study', open)}
           badge={model.displayStatus}
           badgeTone={model.displayStatus === 'OPERATE' ? 'danger' : model.displayStatus === 'RESTRAIN' ? 'success' : 'warning'}
+          intl={ANALYSIS_GROUP_INTL}
           summary={(
             <SectionSummary columns={1}>
               <SummaryMetric label='Preset' value={model.studyLabel} />
@@ -101,21 +109,22 @@ export function UnderfrequencyAnalysisPanel({
           {model.plnVerificationRequired && (
             <p className='underfrequency-analysis-pln'>
               <b>PLN STANDARD — NOT VERIFIED</b>
-              <span>{model.sourceNote ?? 'Typical practice; pending official grid-code verification.'}</span>
+              <span>{model.sourceNote ?? 'Praktik umum; menunggu verifikasi grid-code resmi.'}</span>
             </p>
           )}
         </ParameterGroup>
       )}
 
       <ParameterGroup
-        title='Checks'
+        title='Pemeriksaan'
         open={sections.checks}
         onOpenChange={(open) => setOpen('checks', open)}
         defaultOpen={false}
         badge={model.checks.some((c) => c.status === 'FAIL') ? 'FAIL' : model.checks.length ? 'PASS' : '—'}
         badgeTone={model.checks.some((c) => c.status === 'FAIL') ? 'danger' : model.checks.length ? 'success' : 'neutral'}
+        intl={ANALYSIS_GROUP_INTL}
         summary={(
-          <SectionSummary columns={1}><SummaryMetric label='Checks' value={model.checks.length} /></SectionSummary>
+          <SectionSummary columns={1}><SummaryMetric label='Pemeriksaan' value={model.checks.length} /></SectionSummary>
         )}
       >
         <div className='underfrequency-analysis-checks'>
@@ -131,11 +140,12 @@ export function UnderfrequencyAnalysisPanel({
 
       {model.summaryTiles.length > 0 && (
         <ParameterGroup
-          title='Summary'
+          title='Ringkasan'
           open={sections.summary}
           onOpenChange={(open) => setOpen('summary', open)}
           badge={`${model.summaryTiles.length} TILES`}
           badgeTone='info'
+          intl={ANALYSIS_GROUP_INTL}
           summary={(
             <SectionSummary columns={1}><SummaryMetric label='Headline' value={model.headline.label} tone={TONE_TO_BADGE[model.headline.tone]} /></SectionSummary>
           )}
@@ -153,14 +163,15 @@ export function UnderfrequencyAnalysisPanel({
 
       {model.phases.length > 0 && (
         <ParameterGroup
-          title='Operating Phases'
+          title='Tahapan Operasi'
           open={sections.phases}
           onOpenChange={(open) => setOpen('phases', open)}
           defaultOpen={false}
           badge={`${model.phases.length} PHASES`}
           badgeTone='info'
+          intl={ANALYSIS_GROUP_INTL}
           summary={(
-            <SectionSummary columns={1}><SummaryMetric label='Phases' value={model.phases.length} /></SectionSummary>
+            <SectionSummary columns={1}><SummaryMetric label='Tahapan' value={model.phases.length} /></SectionSummary>
           )}
         >
           <ol className='underfrequency-analysis-phases'>
@@ -177,12 +188,13 @@ export function UnderfrequencyAnalysisPanel({
 
       {model.calculationDetails.length > 0 && (
         <ParameterGroup
-          title='Calculation Details'
+          title='Detail Perhitungan'
           open={sections.calculation}
           onOpenChange={(open) => setOpen('calculation', open)}
           defaultOpen={false}
+          intl={ANALYSIS_GROUP_INTL}
           summary={(
-            <SectionSummary columns={1}><SummaryMetric label='Details' value={model.calculationDetails.length} /></SectionSummary>
+            <SectionSummary columns={1}><SummaryMetric label='Detail' value={model.calculationDetails.length} /></SectionSummary>
           )}
         >
           <div className='underfrequency-analysis-calculation'>
@@ -193,13 +205,14 @@ export function UnderfrequencyAnalysisPanel({
 
       {model.events.length > 0 && (
         <ParameterGroup
-          title='Events'
+          title='Peristiwa'
           open={sections.events}
           onOpenChange={(open) => setOpen('events', open)}
           defaultOpen={false}
           badge={String(model.events.length)}
+          intl={ANALYSIS_GROUP_INTL}
           summary={(
-            <SectionSummary columns={1}><SummaryMetric label='Recorded events' value={model.events.length} /></SectionSummary>
+            <SectionSummary columns={1}><SummaryMetric label='Peristiwa tercatat' value={model.events.length} /></SectionSummary>
           )}
         >
           <div className='underfrequency-analysis-events'>

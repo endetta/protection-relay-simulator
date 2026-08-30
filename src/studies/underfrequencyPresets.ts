@@ -52,8 +52,8 @@ const UFLS: readonly UflsStageSettings[] = [
 const PLN_NOTES = {
   plnVerificationRequired: true,
   sourceNote:
-    'UFLS thresholds / shed fractions reflect typical PLN island practice; ' +
-    'not yet verified against an official grid code.',
+    'Threshold UFLS / shed fraction mencerminkan praktik island PLN yang umum; ' +
+    'belum diverifikasi terhadap grid code resmi.',
 } as const;
 
 // ──────────────── Throwing preset builder (O05-style) ──────────────────────
@@ -96,8 +96,8 @@ function preset(
  */
 export const UFR_01_NOMINAL: UnderfrequencyStudyPreset = preset(
   'UFR-01',
-  'Nominal Operation',
-  'Balanced island at nominal frequency; no disturbance, no UFLS operation, RESTRAIN.',
+  'Operasi Nominal',
+  'Island seimbang pada frekuensi nominal; tanpa disturbance, tanpa operasi UFLS, RESTRAIN.',
 );
 
 /**
@@ -107,8 +107,8 @@ export const UFR_01_NOMINAL: UnderfrequencyStudyPreset = preset(
  */
 export const UFR_02_LOSE_LARGE_UNIT: UnderfrequencyStudyPreset = preset(
   'UFR-02',
-  'Loss of 500 MW Unit',
-  'G1 (500 MW) trips; large deficit drives ROCOF ≈ −3 Hz/s and Stage 1 UFLS shedding.',
+  'Kehilangan Unit 500 MW',
+  'G1 (500 MW) trip; defisit besar mendorong ROCOF ≈ −3 Hz/s dan UFLS Stage 1 shedding.',
   {
     disturbanceSteps: [{ id: 'D1', kind: 'GENERATOR_LOSS', timeSec: 0, generatorId: 'G1' }],
   },
@@ -121,8 +121,8 @@ export const UFR_02_LOSE_LARGE_UNIT: UnderfrequencyStudyPreset = preset(
  */
 export const UFR_03_LOSE_TWO_UNITS: UnderfrequencyStudyPreset = preset(
   'UFR-03',
-  'Loss of Two Units',
-  'G1 + G2 (850 MW) trip; staged UFLS sheds en route to arrest a deep decay.',
+  'Kehilangan Dua Unit',
+  'G1 + G2 (850 MW) trip; UFLS bertahap melepas beban untuk menghentikan penurunan yang dalam.',
   {
     disturbanceSteps: [
       { id: 'D1', kind: 'GENERATOR_LOSS', timeSec: 0, generatorId: 'G1' },
@@ -138,10 +138,10 @@ export const UFR_03_LOSE_TWO_UNITS: UnderfrequencyStudyPreset = preset(
  */
 export const UFR_04_HIGH_INERTIA: UnderfrequencyStudyPreset = preset(
   'UFR-04',
-  'High Inertia Island',
-  'Same 500 MW loss but boosted inertia constants; slower, shallower decay.',
+  'Island Inersia Tinggi',
+  'Kehilangan 500 MW yang sama tetapi konstanta inertia dinaikkan; penurunan lebih lambat dan dangkal.',
   {
-    description: 'High-inertia variant of UFR-02; same 500 MW loss but a gentler, slower decay.',
+    description: 'Varian inersia tinggi dari UFR-02; kehilangan 500 MW yang sama tetapi penurunan lebih lembut dan lambat.',
     generators: GENS.map((g) => (g.id === 'G4' ? { ...g, inertiaSec: 6.0 } : g)),
     disturbanceSteps: [{ id: 'D1', kind: 'GENERATOR_LOSS', timeSec: 0, generatorId: 'G1' }],
   },
@@ -154,10 +154,10 @@ export const UFR_04_HIGH_INERTIA: UnderfrequencyStudyPreset = preset(
  */
 export const UFR_05_LOW_INERTIA: UnderfrequencyStudyPreset = preset(
   'UFR-05',
-  'Low Inertia Island',
-  'Same 500 MW loss but reduced inertia constants; faster, deeper decay.',
+  'Island Inersia Rendah',
+  'Kehilangan 500 MW yang sama tetapi konstanta inertia diturunkan; penurunan lebih cepat dan dalam.',
   {
-    description: 'Low-inertia variant of UFR-02; same 500 MW loss but a steeper, faster decay.',
+    description: 'Varian inersia rendah dari UFR-02; kehilangan 500 MW yang sama tetapi penurunan lebih curam dan cepat.',
     generators: GENS.map((g) => (g.id === 'G4' ? { ...g, inertiaSec: 2.0 } : g)),
     disturbanceSteps: [{ id: 'D1', kind: 'GENERATOR_LOSS', timeSec: 0, generatorId: 'G1' }],
   },
@@ -170,8 +170,8 @@ export const UFR_05_LOW_INERTIA: UnderfrequencyStudyPreset = preset(
  */
 export const UFR_06_SMALL_DEFICIT: UnderfrequencyStudyPreset = preset(
   'UFR-06',
-  'Small Deficit (100 MW)',
-  'A 100 MW load step; droop alone arrests the decay, likely no UFLS operation.',
+  'Defisit Kecil (100 MW)',
+  'Load step 100 MW; droop saja menghentikan penurunan, kemungkinan tanpa operasi UFLS.',
   {
     disturbanceSteps: [{ id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 100 }],
   },

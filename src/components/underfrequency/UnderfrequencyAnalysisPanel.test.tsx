@@ -51,7 +51,7 @@ function renderPanel(presetId: string): string {
 describe('UFR Analysis / Learning panel', () => {
   it('renders status hierarchy, checks, big-number summary tiles, and the study description', () => {
     const markup = renderPanel('UFR-02');
-    expect(markup).toContain('Relay / System Status');
+    expect(markup).toContain('Status Relay / System');
     // The 500 MW unit loss sheds three adjacent UFLS stages en route to arrest.
     expect(markup).toContain('UFLS 3 STAGES OPERATED');
     expect(markup).toContain('Inertia (H_sys)');
@@ -68,8 +68,8 @@ describe('UFR Analysis / Learning panel', () => {
 
   it('renders operating phases and calculation detail when available', () => {
     const markup = renderPanel('UFR-06');
-    expect(markup).toContain('Operating Phases');
-    expect(markup).toContain('Calculation Details');
+    expect(markup).toContain('Tahapan Operasi');
+    expect(markup).toContain('Detail Perhitungan');
     expect(markup).toContain('S_base');
     expect(markup).toContain('H_sys');
     expect(markup).toContain('ROCOF');
@@ -79,6 +79,6 @@ describe('UFR Analysis / Learning panel', () => {
   it('renders RESTRAIN for a balanced, no-shed study', () => {
     const markup = renderPanel('UFR-01');
     expect(markup).toContain('RESTRAIN');
-    expect(markup).toContain('No UFLS operated');
+    expect(markup).toContain('Tidak ada UFLS yang beroperasi');
   });
 });
