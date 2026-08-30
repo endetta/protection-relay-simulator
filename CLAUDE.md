@@ -64,3 +64,18 @@ This repository uses Git + GitHub as the source of truth. There is always a save
 - **No secrets.** Never commit keys, tokens, or credentials.
 
 Local settings that must stay out of the repo (already gitignored): `.claude/settings.local.json` is machine-local and auto-modified per session — never stage it.
+
+### Parallel sessions (mandatory)
+
+When two or more Claude Code sessions (or one Claude + a human/VS Code) work in the **same** main working tree at once, they share **one** git index — a `git commit` with no pathspec can sweep in another session's staged files and produce the mixed/duplicate commits this repo hit before. **One session per working tree, always.**
+
+1. **Detect.** `SessionStart` runs `.claude/hooks/session-guard.sh` and writes a per-PID lock under `.claude/active-sessions/`. If another live session is already using this main tree, the hook prints a warning + the exact command to move to a worktree. Respect it.
+2. **Move to a worktree** before any commit. One command, full setup:
+   ```bash
+   bash scripts/parallel-session.sh <task-name>
+   ```
+   This creates `.claude/worktrees/<task-name>` on branch `work/<task-name>` with its own `.git/index`, and junction-links `node_modules` to the main tree (instant, zero install). Pass `--fresh` for a real `npm install` instead. The worktree path is gitignored.
+3. **Commit inside the worktree** with explicit pathspecs (`git add <paths>`, then `git commit -- <paths>` or `git commit -m "..."` after a verified `git diff --name-only --cached HEAD`). Never `git add .` / `git add -A` / `git commit -a` — those are exactly the sweeps that caused the race.
+4. **Push & merge.** From inside the worktree: `git push -u origin work/<task-name>`, then `gh pr create --base main`. After merge, `bash scripts/parallel-session.sh --remove <task-name>`.
+5. **Enforcement.** `.githooks/pre-commit` is the hard gate: on the main tree, it rejects any commit when ≥ 2 session locks are live (one session is the normal case, never blocked). In a worktree, the gate is bypassed — that is the correct, isolated place to work. The gate is activated once via `git config core.hooksPath .githooks` and re-applied on every `npm install` by the `prepare` script in `package.json`.
+6. **Escape hatch.** `git commit --no-verify` is allowed only on explicit user instruction. Document why in the message.

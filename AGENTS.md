@@ -60,6 +60,7 @@ Vitest, no global state library, no chart library (inline SVG).
 - Do not propose new dependencies, chart libraries, or state libraries
 - Prefer extending existing shared/pattern files over inventing parallel architecture
 - For Overcurrent: read `memory-bank/activeContext.md` for O01–O16 implementation baseline before changes
+- Never run two Claude sessions (or one Claude + a human/VS Code) in the same main working tree at once — they share one git index and a no-pathspec commit can sweep in the other session's staged files. Before any commit when another session may be live, run `bash scripts/parallel-session.sh <task-name>` and commit inside the resulting worktree (its own index, own branch). `.githooks/pre-commit` enforces this: ≥ 2 live session locks on the main tree ⇒ commit rejected. Escape hatch is `git commit --no-verify`, only on explicit user instruction
 
 ## Skills (`.agents/skills/`)
 - `senior-ui-ux-reviewer` — psychology-driven UX heuristics (audit discovery)
