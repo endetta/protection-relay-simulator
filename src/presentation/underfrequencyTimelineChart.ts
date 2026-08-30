@@ -12,6 +12,7 @@
  */
 
 import type {
+  UflsStageId,
   UflsStageSettings,
   UnderfrequencyTimelineRun,
   UnderfrequencyTimelineSnapshot,
@@ -232,6 +233,71 @@ export function buildUnderfrequencyTimelineChartModel(
     minFrequencyHz: yValues.length > 0 ? Math.min(...yValues) : null,
     finalFrequencyHz: run.finalFrequencyHz,
     finalTimeSec: run.finalTimeSec,
+  };
+}
+
+// ─────────────────────────────── Tooltip model ───────────────────────────────
+
+export interface UnderfrequencyTimelineTooltip {
+  readonly timeSec: number;
+  readonly frequencyHz: number;
+  readonly rocofHzPerSec: number;
+  readonly deficitMw: number;
+  /** Stage IDs armed at the hovered instant (threshold crossed, timer running). */
+  readonly armedStageIds: readonly UflsStageId[];
+  /** Stage IDs that have operated (tripped) up to and including the hovered instant. */
+  readonly operatedStageIds: readonly UflsStageId[];
+  /** Human-readable event summary for the exact instant, e.g. "UFLS trip · S1". */
+  readonly eventLabels: readonly string[];
+}
+
+/**
+ * Build the contextual tooltip payload for a cursor at `timeSec`. This is pure
+ * presentation: it reads engine output (snapshot + events) and only shapes it
+ * for the chart's hover — it never re-derives a relay or governor equation.
+ *
+ * Returns `null` when there is nothing meaningful to describe (invalid run or
+ * an out-of-window time), so the component simply hides the tooltip.
+ */
+export function buildUnderfrequencyTimelineTooltip(
+  run: UnderfrequencyTimelineRun,
+  uflsStages: readonly UflsStageSettings[],
+  timeSec: number | null | undefined,
+): UnderfrequencyTimelineTooltip | null {
+  if (run.status !== 'VALID' || run.snapshots.length === 0) return null;
+  const snap = snapshotAtTime(run.snapshots, timeSec ?? run.snapshots[run.snapshots.length - 1].engineeringTimeSec);
+  if (!snap) return null;
+
+  // Stage labels come from the study so the tooltip speaks in preset terms
+  // ("Stage 1 — 49.50" not an opaque "S1"), matching the stage line legend.
+  const labelFor = (stageId: string) =>
+    uflsStages.find((s) => s.id === stageId)?.label ?? stageId;
+
+  const eventLabels: string[] = [];
+  // The snapshot at an event instant is pre-event (the engine latches the stage
+  // into operatedIds *after* emitting the snapshot for that tick), so fold the
+  // event-derived stage status in — hovering a trip marker should report the
+  // stage as just-operated, not mid-transition.
+  const operated = new Set(snap.operatedStageIds);
+  const armed = new Set(snap.armedStageIds);
+  const eventsAtTime = run.events.filter((e) => e.timeSec === snap.engineeringTimeSec);
+  for (const ev of eventsAtTime) {
+    if (ev.stageId) {
+      if (ev.type === 'UFLS_TRIP') operated.add(ev.stageId);
+      if (ev.type === 'UFLS_ARMED') armed.add(ev.stageId);
+    }
+    const subject = ev.stageId ? labelFor(ev.stageId) : ev.generatorId ?? ev.detail ?? '';
+    eventLabels.push(subject ? `${ev.type} · ${subject}` : ev.type);
+  }
+
+  return {
+    timeSec: snap.engineeringTimeSec,
+    frequencyHz: snap.frequencyHz,
+    rocofHzPerSec: snap.rocofHzPerSec,
+    deficitMw: snap.deficitMw,
+    armedStageIds: [...armed],
+    operatedStageIds: [...operated],
+    eventLabels,
   };
 }
 

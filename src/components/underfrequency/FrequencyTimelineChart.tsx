@@ -4,9 +4,15 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type Dispatch,
 } from 'react';
-import { buildUnderfrequencyTimelineChartModel, snapshotAtTime } from '../../presentation/underfrequencyTimelineChart';
+import {
+  buildUnderfrequencyTimelineChartModel,
+  buildUnderfrequencyTimelineTooltip,
+  snapshotAtTime,
+  type UnderfrequencyTimelineTooltip,
+} from '../../presentation/underfrequencyTimelineChart';
 import type {
   UnderfrequencyAction,
 } from '../../utils/underfrequencyState';
@@ -58,6 +64,20 @@ function mapsy(min: number, max: number) {
 
 function pathFromCurve(curve: readonly { x: number; y: number }[], sx: (v: number) => number, sy: (v: number) => number): string {
   return curve.map((point, index) => `${index === 0 ? 'M' : 'L'} ${sx(point.x).toFixed(2)} ${sy(point.y).toFixed(2)}`).join(' ');
+}
+
+// Estimated tooltip width/height for clamp math; avoids a ref-read roundtrip
+// on every pointer move. The 240×4-tile layout fits comfortably inside this.
+const TOOLTIP_ESTIMATE_W = 260;
+const TOOLTIP_ESTIMATE_H = 120;
+
+/** Position the tooltip near the cursor and flip/clamp inside the frame. */
+function tooltipStyle(pos: { x: number; y: number }): CSSProperties {
+  const offsetX = 14;
+  const placeRight = pos.x + offsetX + TOOLTIP_ESTIMATE_W <= 660; // approximate frame width
+  const x = placeRight ? pos.x + offsetX : Math.max(0, pos.x - offsetX - TOOLTIP_ESTIMATE_W);
+  const y = Math.max(8, pos.y - TOOLTIP_ESTIMATE_H / 2);
+  return { left: x, top: y };
 }
 
 /** Build a compact phase narrative from the run for story mode. */
@@ -131,6 +151,11 @@ export function FrequencyTimelineChart({
   const [storyOpen, setStoryOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [scrubTimeSec, setScrubTimeSec] = useState<number | null>(null);
+  const [hoverTimeSec, setHoverTimeSec] = useState<number | null>(null);
+  const [hoverTooltip, setHoverTooltip] = useState<UnderfrequencyTimelineTooltip | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const frameRef = useRef<HTMLDivElement | null>(null);
   const previousFrameMs = useRef<number | null>(null);
   const animationFrame = useRef<number | null>(null);
   const scrubTimeSecRef = useRef<number | null>(null);
@@ -153,6 +178,17 @@ export function FrequencyTimelineChart({
   useEffect(() => {
     onSnapshotChange?.(visibleSnapshot);
   }, [visibleSnapshot, onSnapshotChange]);
+
+  // Build the contextual tooltip payload from the hover time. Pure presentation
+  // call — the component only maps cursor → time and renders the result.
+  useEffect(() => {
+    if (!run || hoverTimeSec === null) {
+      setHoverTooltip(null);
+      return;
+    }
+    const tip = buildUnderfrequencyTimelineTooltip(run, study.uflsStages, hoverTimeSec);
+    setHoverTooltip(tip);
+  }, [hoverTimeSec, run, study.uflsStages]);
 
   // Playback clock: advances scrubTimeSec toward finalTimeSec while RUNNING.
   useEffect(() => {
@@ -190,6 +226,58 @@ export function FrequencyTimelineChart({
   const curvePath = model && model.status === 'VALID' ? pathFromCurve(model.curve, sx, sy) : '';
   const scrubX = model && scrubTimeSec !== null ? sx(scrubTimeSec) : null;
   const activeStep = scrubTimeSec !== null ? steps.reduce((best, s) => (Math.abs(s.timeSec - scrubTimeSec) < Math.abs(best.timeSec - scrubTimeSec) ? s : best), steps[0]) : null;
+
+  // Hover → engineering-time mapping. Uses getScreenCTM so it works at any
+  // CSS scale and inside the horizontal-scroll area. Coordinates outside the
+  // plot are clamped to the [xMin, xMax] window so the tooltip still shows a
+  // meaningful value at the cursor's edge.
+  const clientToEngineeringTime = (clientX: number, clientY: number): {
+    timeSec: number | null;
+    pos: { x: number; y: number } | null;
+  } => {
+    if (!model || model.status !== 'VALID') return { timeSec: null, pos: null };
+    const svg = svgRef.current;
+    const frame = frameRef.current;
+    if (!svg || !frame) return { timeSec: null, pos: null };
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { timeSec: null, pos: null };
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const local = pt.matrixTransform(ctm.inverse());
+    const { min: xMin, max: xMax } = model.xAxis;
+    if (!Number.isFinite(local.x)) return { timeSec: null, pos: null };
+    const clampedX = Math.min(Math.max(local.x, MARGIN_LEFT), W - MARGIN_RIGHT);
+    const frac = (clampedX - MARGIN_LEFT) / PLOT_WIDTH;
+    const timeSec = xMin + frac * (xMax - xMin);
+    // Position the tooltip in **frame-pixel** coords so the absolutely-
+    // positioned overlay matches where the SVG point renders — independent
+    // of viewBox scaling and the horizontal-scroll area.
+    const frameRect = frame.getBoundingClientRect();
+    const svgRect = svg.getBoundingClientRect();
+    // SVG is centred horizontally inside the scroll area when `meet` chooses
+    // to letterbox; account for that offset so the cursor maps to the right
+    // frame pixel.
+    const scale = svgRect.width > 0 ? svgRect.width / W : 1;
+    const renderedSvgW = W * scale;
+    const xInSvgPx = (clampedX - MARGIN_LEFT) * scale + (svgRect.width - renderedSvgW) / 2;
+    return {
+      timeSec,
+      pos: { x: xInSvgPx + (svgRect.left - frameRect.left), y: clientY - frameRect.top },
+    };
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+    const { timeSec, pos } = clientToEngineeringTime(event.clientX, event.clientY);
+    if (timeSec === null || pos === null) return;
+    setHoverTimeSec(timeSec);
+    setHoverPos(pos);
+  };
+
+  const handlePointerLeave = () => {
+    setHoverTimeSec(null);
+    setHoverPos(null);
+  };
 
   const fNow = visibleSnapshot
     ? formatFrequencyHz(visibleSnapshot.frequencyHz)
@@ -308,7 +396,7 @@ export function FrequencyTimelineChart({
             />
           </div>
 
-          <div className='underfrequency-ftc-frame'>
+          <div className='underfrequency-ftc-frame' ref={frameRef}>
             <div className='underfrequency-ftc-legend' aria-label='Legend timeline frekuensi'>
               <span><i data-kind='curve' /> System frequency</span>
               <span><i data-kind='nominal' /> Nominal {formatFrequencyHz(model.nominalFrequencyHz)} Hz</span>
@@ -322,11 +410,15 @@ export function FrequencyTimelineChart({
               orientation='horizontal'
             >
               <svg
+                ref={svgRef}
                 viewBox={`0 0 ${W} ${H}`}
                 preserveAspectRatio='xMidYMid meet'
                 role='img'
                 aria-labelledby={`${titleId}-plot`}
                 className='underfrequency-ftc-svg'
+                onPointerMove={handlePointerMove}
+                onPointerLeave={handlePointerLeave}
+                onPointerCancel={handlePointerLeave}
               >
                 <desc id={`${titleId}-plot`}>
                   System frequency terhadap engineering time dengan UFLS thresholds, penanda trip, dan garis frekuensi nominal.
@@ -412,6 +504,23 @@ export function FrequencyTimelineChart({
                       <circle cx={scrubX} cy={visibleSnapshot ? sy(visibleSnapshot.frequencyHz) : MARGIN_TOP} r='4' />
                     </g>
                   )}
+
+                  {/* Hover marker — small dot at the curve under the cursor */}
+                  {hoverTooltip && (
+                    <g className='underfrequency-ftc-hover' aria-hidden='true'>
+                      <line
+                        x1={sx(hoverTooltip.timeSec)}
+                        y1={MARGIN_TOP}
+                        x2={sx(hoverTooltip.timeSec)}
+                        y2={H - MARGIN_BOTTOM}
+                      />
+                      <circle
+                        cx={sx(hoverTooltip.timeSec)}
+                        cy={sy(hoverTooltip.frequencyHz)}
+                        r='4'
+                      />
+                    </g>
+                  )}
                 </g>
 
                 <line className='underfrequency-ftc-axis' x1={MARGIN_LEFT} y1={MARGIN_TOP} x2={MARGIN_LEFT} y2={H - MARGIN_BOTTOM} />
@@ -424,6 +533,48 @@ export function FrequencyTimelineChart({
                 </text>
               </svg>
             </OverlayScrollArea>
+
+            {hoverTooltip && hoverPos && (
+              <div
+                className='underfrequency-ftc-tooltip'
+                aria-hidden='true'
+                style={tooltipStyle(hoverPos)}
+              >
+                <div className='underfrequency-ftc-tooltip-row underfrequency-ftc-tooltip-row--lead'>
+                  <span className='underfrequency-ftc-tooltip-key'>t</span>
+                  <span className='underfrequency-ftc-tooltip-val font-eng'>{formatEngineeringNumber(hoverTooltip.timeSec)} s</span>
+                  <span className='underfrequency-ftc-tooltip-key'>f</span>
+                  <span className='underfrequency-ftc-tooltip-val font-eng'>{formatFrequencyHz(hoverTooltip.frequencyHz)} Hz</span>
+                </div>
+                <div className='underfrequency-ftc-tooltip-row'>
+                  <span className='underfrequency-ftc-tooltip-key'>df/dt</span>
+                  <span className='underfrequency-ftc-tooltip-val font-eng'>{formatEngineeringNumber(hoverTooltip.rocofHzPerSec)} Hz/s</span>
+                  <span className='underfrequency-ftc-tooltip-key'>defisit</span>
+                  <span className='underfrequency-ftc-tooltip-val font-eng'>{formatEngineeringNumber(hoverTooltip.deficitMw)} MW</span>
+                </div>
+                {hoverTooltip.eventLabels.length > 0 && (
+                  <ul className='underfrequency-ftc-tooltip-events'>
+                    {hoverTooltip.eventLabels.map((label, index) => (
+                      <li key={`${label}-${index}`}>{label}</li>
+                    ))}
+                  </ul>
+                )}
+                {(hoverTooltip.armedStageIds.length > 0 || hoverTooltip.operatedStageIds.length > 0) && (
+                  <div className='underfrequency-ftc-tooltip-stages'>
+                    {hoverTooltip.armedStageIds.length > 0 && (
+                      <span className='underfrequency-ftc-tooltip-pill' data-tone='armed'>
+                        Armed: {hoverTooltip.armedStageIds.map((id) => study.uflsStages.find((s) => s.id === id)?.label ?? id).join(', ')}
+                      </span>
+                    )}
+                    {hoverTooltip.operatedStageIds.length > 0 && (
+                      <span className='underfrequency-ftc-tooltip-pill' data-tone='operated'>
+                        Operated: {hoverTooltip.operatedStageIds.map((id) => study.uflsStages.find((s) => s.id === id)?.label ?? id).join(', ')}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
