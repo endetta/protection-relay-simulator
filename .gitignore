@@ -6,5 +6,8 @@ dist
 # Machine-local Claude Code permissions/settings (auto-modified per session)
 .claude/settings.local.json
 
+# Isolated git worktrees for parallel Claude Code sessions — never part of the working tree
+.claude/worktrees/
+
 # Teaching workspace (personal, not part of the distributed project)
 .teach/
