@@ -170,10 +170,14 @@ export function buildUnderfrequencyTimelineChartModel(
   // Nominal line drawn explicitly; ensure it sits inside the y-axis range.
   const nominalFrequencyHz = fNominalHz;
   const yValues: number[] = snapshots.map((snap) => snap.frequencyHz);
-  const stageFrequencies = uflsStages
-    .filter((s) => s.enabled)
-    .map((s) => s.thresholdHz);
-  const allY = [...yValues, nominalFrequencyHz, ...stageFrequencies];
+  // The y-domain is sized to the **curve's own data + nominal line**, not to
+  // UFLS stage threshold frequencies. Stage lines are a separate visual
+  // overlay (dashed amber) and are clipped to the plot rect at render time —
+  // they must not stretch the axis. Otherwise a small-deficit preset whose
+  // curve never approaches a stage (e.g. UFR-06: 50 → 49.86 Hz) ends up with
+  // a 2+ Hz axis sized to the lowest stage at 48 Hz, and the curve occupies
+  // a < 15% sliver that looks like a flat stub (Bug 5).
+  const allY = [...yValues, nominalFrequencyHz];
   const yMinData = allY.length > 0 ? Math.min(...allY) : 45;
   const yMaxData = allY.length > 0 ? Math.max(...allY) : 51;
   // Clamp to the physics band first so a runaway/absurd footprint cannot crush

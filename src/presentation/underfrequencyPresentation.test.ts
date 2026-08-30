@@ -44,6 +44,26 @@ describe('UFR presentation — f(t) timeline chart model', () => {
     expect(model.yAxis.max).toBeGreaterThanOrEqual(nominal);
   });
 
+  it('sizes the y-domain to the curve for a small-deficit preset (Bug 5)', () => {
+    // UFR-06 is a 100 MW load step on a ~1500 MW system: the curve drops from
+    // 50.00 → ~49.86 Hz. Previously the y-axis was inflated to ~2.3 Hz by the
+    // stage threshold lines (48..49.5 Hz) being mixed into the bounds, which
+    // made the curve occupy < 6% of the plot and look like a flat stub. The
+    // axis must be sized to the curve's own data + nominal, not to UFLS
+    // thresholds; stage lines are an overlay, drawn if inside the plot, clipped
+    // if outside.
+    const study = UFR_06_SMALL_DEFICIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    expect(run.status).toBe('VALID');
+    const model = buildUnderfrequencyTimelineChartModel(run, study.uflsStages, study.system.fNominalHz);
+    const curveMin = Math.min(...run.snapshots.map((s) => s.frequencyHz));
+    const dataSpan = model.yAxis.max - model.yAxis.min;
+    // The axis should be small enough that the curve's droop is visibly
+    // perceptible (≥ 40% of the plot height) — not a 6% sliver.
+    const curveSpan = model.yAxis.max - curveMin;
+    expect(curveSpan / dataSpan).toBeGreaterThan(0.4);
+  });
+
   it('exposes stage lines for every enabled UFLS stage and marks the operated latch', () => {
     const study = UFR_02_LOSE_LARGE_UNIT.study;
     const run = computeUnderfrequencyTimeline(study);
