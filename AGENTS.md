@@ -8,7 +8,8 @@ Vitest, no global state library, no chart library (inline SVG).
 ## Module status
 - Differential Relay: FINAL / FROZEN (R10) — do not modify without user approval
 - Overcurrent Relay: O16 audit pass / CONDITIONAL RELEASE — **READY FOR FREEZE (2026-08-30)**; fresh `npm ci`, Vitest, Vite build, and production browser smoke all PASS on this release source; NOT FINAL until the user explicitly approves freeze
-- Distance Relay: parallel branch D05 (not merged into this source)
+- Distance Relay: **IMPLEMENTED / MERGED into this source** (`/simulator/distance` wired); spec D01 READY FOR APPROVAL, not frozen; partial test coverage (no page/timeline test)
+- Underfrequency Relay: **COMPLETE / MERGED into this source** (`/simulator/underfrequency` wired); spec U01 READY FOR APPROVAL, not frozen
 - Homepage: R02 (not frozen)
 
 ## Read first (order matters)

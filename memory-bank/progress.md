@@ -7,7 +7,7 @@
 - O16 static integration/accessibility audit: 80 / 80 PASS.
 - No unresolved Overcurrent product P0/P1 found.
 - As of 2026-08-29 the dependency-complete Vitest suite (31 files / 260 tests) and Vite production build passed in the current environment; `tsc --noEmit` is clean.
-- As of 2026-08-30 the full release gate is closed on this release source: fresh `npm ci` from a clean cache (136 packages), `npm test` (31 files / 260 tests), `npm run build` (83 modules), and a production browser smoke (`/`, `/simulator/differential`, `/simulator/overcurrent` — HTTP 200) all PASS. The module is READY FOR FREEZE.
+- As of 2026-08-30 the full release gate is closed on this release source: fresh `npm ci` from a clean cache (136 packages), `npm test` (31 files / 260 tests at O16; the live suite is now 43 files / 366 tests with Distance + Underfrequency present), `npm run build` (83 modules at O16; now 105), and a production browser smoke (`/`, `/simulator/differential`, `/simulator/overcurrent` — HTTP 200) all PASS. The module is READY FOR FREEZE.
 - Remaining before FINAL/FROZEN: explicit user freeze approval only.
 
 
@@ -18,8 +18,11 @@
 - [~] **Homepage / Protection Lab** — IMPLEMENTED R02 / NOT FROZEN
 - [~] **Overcurrent Relay** — **O16 AUDIT PASS / CONDITIONAL RELEASE CANDIDATE; READY FOR FREEZE 2026-08-30; ALL GATE ITEMS PASS; FREEZE NOT YET USER-APPROVED**
 - [x] **Differential Relay** — FINAL / COMPLETED at R10
-- [~] **Distance Relay** — PARALLEL BRANCH D05 PASS / NOT MERGED INTO THIS SOURCE
-- [ ] **Underfrequency Relay** — PLANNED / NOT STARTED
+- [~] **Distance Relay** — **IMPLEMENTED / MERGED INTO THIS SOURCE** (`/simulator/distance` + homepage wired); spec D01 READY FOR APPROVAL; partial test coverage (no page/timeline test)
+- [~] **Underfrequency Relay** — **COMPLETE / MERGED INTO THIS SOURCE** (`/simulator/underfrequency` + homepage wired, per CLAUDE.md + commits `cec6f11`…`7a19f6f`); spec U01 READY FOR APPROVAL, not frozen
+- Baseline re-derived 2026-08-30: `npm test` **43 files / 366 tests PASS**; `npm run build` (tsc strict + Vite) **105 modules** clean.
+
+> Full-project state now spans four relay modules. The Overcurrent phase history below is retained verbatim as the O01–O16 record; Distance/Underfrequency records are appended after it.
 
 **Differential freeze rule:** R10 is the final Differential Relay reference state. Future work must not modify Differential Relay unless its scope is explicitly reopened.
 
@@ -97,7 +100,7 @@ These remain specification work, not UI bugs.
 
 ## Other relay modules
 
-Differential Relay is complete/frozen at R10. Homepage R02 provides the current navigation shell. Overcurrent Relay now has an authoritative module PRD and is the next active engineering workstream; Distance and Underfrequency remain planned.
+Differential Relay is complete/frozen at R10. Homepage R02 provides the current navigation shell. Overcurrent Relay has an authoritative module PRD and is the release-frozen candidate (O16 gate closed). Distance and Underfrequency are now implemented and merged into `main` but remain spec-pending (D01 / U01 READY FOR APPROVAL).
 
 
 ### UI/UX R03 — 2026-08-13
@@ -434,3 +437,35 @@ R09 verification: engine files unchanged; 33 TS/TSX syntax PASS; semantic type-c
 - Verification: 1,350,661 runtime checks PASS; 53/53 static integration/accessibility checks PASS; strict pure TypeScript PASS; 82 TS/TSX syntax-transpile / 0 diagnostics; 80 protected parent files parity PASS; source diff expected-only.
 - At the time of writing, dependency-complete Vitest/Vite was environment-blocked by missing offline `yallist-3.1.1`; permanent O15 tests were included and the full suite has since passed (2026-08-29).
 - Next phase: O16 final engineering + UX audit / release freeze.
+
+## Overcurrent O16 — Final Engineering + UX Audit / Release Freeze — 2026-08-14
+
+- Status: COMPLETE / PASSED. Parent: O15 trusted source content.
+- Final engineering/source/state/UX audit and release-candidate documentation; no new Overcurrent protection feature.
+- Independent runtime audit: 494,674 / 494,674 PASS; static integration/accessibility audit: 80 / 80 PASS; pure production TypeScript PASS; 82 TS/TSX syntax-transpile / 0 diagnostics.
+- Corrected one invalid historical Differential overflow test vector; Differential production source unchanged.
+- No open Overcurrent product P0/P1 found.
+- Release gate fully closed (2026-08-30): fresh `npm ci` from a clean cache (136 packages), dependency-complete Vitest (31 files / 260 tests), Vite production build (83 modules), and production browser smoke (`/`, `/simulator/differential`, `/simulator/overcurrent` — HTTP 200) all PASS.
+- Status: **CONDITIONAL RELEASE CANDIDATE — READY FOR FREEZE; NOT YET FINAL/FROZEN**.
+- Freeze requires explicit user approval only; all dependency/build/smoke gate items now PASS.
+
+
+## Distance Relay — D03/D04/D05/D06 implemented — 2026-08-28
+
+- Status: **IMPLEMENTED / MERGED INTO `main`**; spec NOT FROZEN.
+- Spec `docs/engineering-specs/distance-relay.md` (D01 v1.0) is **READY FOR APPROVAL** — declares no production Distance engine code is authorized before approval, yet source exists and is wired: `/simulator/distance` route in `App.tsx` + homepage item in `SimulatorHome`.
+- Source present: `src/types/distance.ts`, `src/engines/distanceMeasurement.ts` (D02 pure engine), `src/engines/distanceTimeline.ts`, `src/utils/distanceState.ts` (D03 study-state reducer), `src/studies/distancePresets.ts`, `src/pages/DistanceSimulator.tsx` (composes D04 one-line, D05 R/X plane, D06 Analysis panel + Operating Sequence), `src/components/distance/*` (RxPlane, DistanceOneLine, DistanceAnalysisPanel, DistanceOperatingSequence).
+- Model: non-pilot, single-line, three-zone mho-style distance protection; VT/CT measurement (ratio + scalar error), apparent impedance Z = V/I (complex scalar study form), per-zone mho circle reach + timing, zone arbitration (lowest-num occupied zone wins with timer), load-encroachment / out-of-reach checks. Not vendor-specific, not a full short-circuit solver.
+- Test coverage: only `src/engines/distanceMeasurement.test.ts` exists. No `DistanceSimulator.test.tsx` page test and no `distanceTimeline.test.ts` engine test. No distance presentation-model layer equivalent to Overcurrent's `overcurrentSld`/`overcurrentTcc`.
+- Verified as part of the 366-test / 43-file passing suite (2026-08-30). Not frozen; spec not approved.
+
+
+## Underfrequency Relay — U01 spec + full module — 2026-08-30
+
+- Status: **COMPLETE / MERGED INTO `main`**; spec NOT FROZEN.
+- Spec `docs/engineering-specs/underfrequency-relay.md` (U01 v1.0) is **READY FOR APPROVAL** — declares no production Underfrequency engine code is authorized before approval, yet CLAUDE.md marks the module complete and commits `cec6f11`…`7a19f6f` build it.
+- Source present: `src/types/underfrequency.ts`, `src/engines/underfrequency.ts` (aggregate / droop / steady-state solver / UFLS / validation), `src/engines/underfrequencyTimeline.ts`, `src/utils/underfrequencyState.ts` + `src/utils/evaluateUnderfrequencyParameters.ts`, `src/studies/underfrequencyStudy.ts` + `underfrequencyPresets.ts`, `src/presentation/underfrequencyAnalysis.ts`, `src/components/underfrequency/*`, `src/pages/UnderfrequencySimulator.tsx`.
+- Implemented physics: single-area generator-coherent frequency model; per-generator inertia `H`, droop `R`, headroom, poles → RPM; disturbance events (GENERATOR_LOSS / LOAD_STEP / GENERATOR_BLOCK); swing-equation closed-form segment integration; piecewise-linear saturation steady-state solver incl. `COLLAPSE`/`DEFICIT_EXCEEDS_AVAILABLE_GENERATION` status; staged UFLS ladder (strict `f < threshold && !nearlyEqual` pickup, reset-definite-time delay, latched trip, shed = fraction of pre-disturbance load); static closed-form evaluator for static↔timeline parity.
+- Page/route wired: `App.tsx` + `SimulatorHome` both route `/simulator/underfrequency`.
+- Tests present: `underfrequency.test.ts`, `underfrequency.hardening.test.ts`, `underfrequencyTimeline.test.ts`, Underfrequency component tests, `UnderfrequencySimulator.test.tsx` — all part of the passing 366-test suite.
+- **U01 not frozen; PLN-verification requirement active** — UFLS thresholds/shed amounts are "typical global practice" flagged `plnVerificationRequired: true`, rendered as an amber note until an official PLN grid code is supplied.
