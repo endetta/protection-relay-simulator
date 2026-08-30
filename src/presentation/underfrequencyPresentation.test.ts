@@ -1,0 +1,198 @@
+import { describe, expect, it } from 'vitest';
+import { computeUnderfrequencyTimeline } from '../engines/underfrequencyTimeline';
+import { evaluateUnderfrequencySystem } from '../engines/underfrequency';
+import { UFR_01_NOMINAL, UFR_02_LOSE_LARGE_UNIT, UFR_06_SMALL_DEFICIT } from '../studies/underfrequencyPresets';
+import { createInitialUnderfrequencyState } from '../utils/underfrequencyState';
+import { buildUnderfrequencyTimelineChartModel, snapshotAtTime } from './underfrequencyTimelineChart';
+import { buildUnderfrequencyGeneratorDiagramModel } from './underfrequencyGeneratorDiagram';
+import { buildUnderfrequencySheddingChartModel } from './underfrequencySheddingChart';
+import { buildUnderfrequencyAnalysisModel } from './underfrequencyAnalysis';
+
+describe('UFR presentation — f(t) timeline chart model', () => {
+  it('builds a VALID chart with a non-degenerate axis and monotonically sorted curve', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const model = buildUnderfrequencyTimelineChartModel(run, study.uflsStages, study.system.fNominalHz);
+    expect(model.status).toBe('VALID');
+    expect(model.xAxis.max).toBeGreaterThan(model.xAxis.min);
+    expect(model.yAxis.max).toBeGreaterThan(model.yAxis.min);
+    expect(model.curve.length).toBeGreaterThan(1);
+    // Times are monotonically non-decreasing.
+    for (let i = 1; i < model.curve.length; i += 1) {
+      expect(model.curve[i].x).toBeGreaterThanOrEqual(model.curve[i - 1].x);
+    }
+    // Nominal line sits inside the y range.
+    expect(model.yAxis.min).toBeLessThanOrEqual(model.nominalFrequencyHz);
+    expect(model.yAxis.max).toBeGreaterThanOrEqual(model.nominalFrequencyHz);
+  });
+
+  it('exposes stage lines for every enabled UFLS stage and marks the operated latch', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const model = buildUnderfrequencyTimelineChartModel(run, study.uflsStages, study.system.fNominalHz);
+    const enabled = study.uflsStages.filter((s) => s.enabled);
+    expect(model.stageLines).toHaveLength(enabled.length);
+    // Every stage line has the correct threshold and is enabled.
+    for (const line of model.stageLines) {
+      expect(line.enabled).toBe(true);
+      expect(line.thresholdHz).toBeGreaterThan(0);
+    }
+    const operatedCount = model.stageLines.filter((l) => l.operated).length;
+    expect(operatedCount).toBeGreaterThan(0);
+  });
+
+  it('reports a null final frequency on a COLLAPSE run', () => {
+    const study = {
+      ...UFR_01_NOMINAL.study,
+      disturbanceSteps: [{ id: 'D', kind: 'LOAD_STEP', timeSec: 0, mw: 5000 }] as const,
+    };
+    const run = computeUnderfrequencyTimeline(study);
+    expect(run.steadyStateStatus).toBe('COLLAPSE');
+    const model = buildUnderfrequencyTimelineChartModel(run, study.uflsStages, study.system.fNominalHz);
+    expect(model.finalFrequencyHz).toBeNull();
+    expect(model.collapseEvent).not.toBeNull();
+  });
+
+  it('snapshotAtTime returns the final snapshot when no scrub target is given', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const snap = snapshotAtTime(run.snapshots, null);
+    expect(snap).toBe(run.snapshots[run.snapshots.length - 1]);
+  });
+});
+
+describe('UFR presentation — generator diagram model', () => {
+  it('lays out each generator with output fill derived from the visible max', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const snapshot = run.snapshots[run.snapshots.length - 1];
+    const model = buildUnderfrequencyGeneratorDiagramModel(snapshot.generators, study.generators, snapshot.frequencyHz, study.system.fNominalHz);
+    expect(model.status).toBe('VALID');
+    expect(model.rows).toHaveLength(study.generators.length);
+    // The dropped unit is TRIPPED with zero output.
+    const g1 = model.rows.find((r) => r.generatorId === 'G1');
+    expect(g1?.status).toBe('TRIPPED');
+    expect(g1?.outputMw).toBe(0);
+    // Output fill is within [0,1] and proportional to output max.
+    for (const row of model.rows) {
+      expect(row.outputFill).toBeGreaterThanOrEqual(0);
+      expect(row.outputFill).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('derives RPM from the snapshot frequency and pole count', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const snapshot = run.snapshots[run.snapshots.length - 1];
+    const model = buildUnderfrequencyGeneratorDiagramModel(snapshot.generators, study.generators, snapshot.frequencyHz, study.system.fNominalHz);
+    // G1 is 2-pole; N = 120·f/poles. Only validate for an online unit.
+    const g2 = model.rows.find((r) => r.generatorId === 'G2'); // 4-pole
+    expect(g2).toBeDefined();
+    expect(g2!.rpm).toBeCloseTo((120 * snapshot.frequencyHz) / 4, 6);
+  });
+});
+
+describe('UFR presentation — shedding chart model', () => {
+  it('orders bars by descending threshold and counts the operated latch', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const model = buildUnderfrequencySheddingChartModel(study.uflsStages, study.system.baseLoadMw, run);
+    expect(model.status).toBe('VALID');
+    expect(model.bars).toHaveLength(study.uflsStages.length);
+    // Descending threshold order.
+    for (let i = 1; i < model.bars.length; i += 1) {
+      expect(model.bars[i].thresholdHz).toBeLessThan(model.bars[i - 1].thresholdHz);
+    }
+    expect(model.operatedCount).toBeGreaterThan(0);
+    // Shed amount for an operated stage is counted in the total.
+    expect(model.totalShedMw).toBeGreaterThan(0);
+  });
+
+  it('handles a no-UFLS run with zero operated stages', () => {
+    const study = UFR_06_SMALL_DEFICIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const model = buildUnderfrequencySheddingChartModel(study.uflsStages, study.system.baseLoadMw, run);
+    expect(model.status).toBe('VALID');
+    expect(model.operatedCount).toBe(0);
+    expect(model.totalShedMw).toBe(0);
+  });
+
+  it('creates an INVALID model when there are no stages', () => {
+    const run = computeUnderfrequencyTimeline(UFR_01_NOMINAL.study);
+    const model = buildUnderfrequencySheddingChartModel([], 1300, run);
+    expect(model.status).toBe('INVALID');
+  });
+});
+
+describe('UFR presentation — analysis model', () => {
+  it('reports RESTRAIN + zero deficit for the nominal preset', () => {
+    const study = UFR_01_NOMINAL.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const staticRef = evaluateUnderfrequencySystem({ system: study.system, generators: study.generators, uflsStages: study.uflsStages });
+    expect(staticRef.status).toBe('VALID');
+    if (staticRef.status !== 'VALID') return;
+    const state = createInitialUnderfrequencyState('UFR-01');
+    const model = buildUnderfrequencyAnalysisModel(state, staticRef.value, run);
+    expect(model.status).toBe('VALID');
+    expect(model.headline.label).toBe('RESTRAIN');
+    expect(model.headline.tone).toBe('success');
+    expect(model.displayStatus).toBe('RESTRAIN');
+    expect(model.calculationDetails.length).toBeGreaterThan(0);
+  });
+
+  it('reports UFLS operated + danger tone for the 500 MW loss', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const postLossWinless = { ...study.system };
+    const survivorGens = study.generators.filter((g) => g.id !== 'G1');
+    const staticRef = evaluateUnderfrequencySystem({ system: postLossWinless, generators: survivorGens, uflsStages: study.uflsStages });
+    expect(staticRef.status).toBe('VALID');
+    if (staticRef.status !== 'VALID') return;
+    const run = computeUnderfrequencyTimeline(study);
+    const state = createInitialUnderfrequencyState('UFR-02');
+    const model = buildUnderfrequencyAnalysisModel(state, staticRef.value, run);
+    expect(model.status).toBe('VALID');
+    expect(model.headline.tone).toBe('danger');
+    expect(model.displayStatus).toBe('OPERATE');
+    expect(model.plnVerificationRequired).toBe(true);
+  });
+
+  it('exposes a min-frequency tile that matches the timeline trough', () => {
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const staticRef = evaluateUnderfrequencySystem({ system: study.system, generators: study.generators.filter((g) => g.id !== 'G1'), uflsStages: study.uflsStages });
+    if (staticRef.status !== 'VALID') return;
+    const state = createInitialUnderfrequencyState('UFR-02');
+    const model = buildUnderfrequencyAnalysisModel(state, staticRef.value, run);
+    const minSnap = Math.min(...run.snapshots.map((s) => s.frequencyHz));
+    const minTile = model.summaryTiles.find((tile) => tile.id === 'MIN-F');
+    expect(minTile?.value).toBe(`${minSnap.toFixed(2)} Hz`);
+  });
+
+  it('surfaces a COLLAPSE headline when the deficit overwhelms governor + UFLS capacity', () => {
+    // +5000 MW load step far exceeds governor headroom (355 MW) + all UFLS
+    // (650 MW), so the surviving system must collapse.
+    const deltaMw = 5000;
+    const study = {
+      ...UFR_01_NOMINAL.study,
+      disturbanceSteps: [{ id: 'D', kind: 'LOAD_STEP', timeSec: 0, mw: deltaMw }] as const,
+    };
+    const run = computeUnderfrequencyTimeline(study);
+    // Encode the load step into the static reference's baseLoad (the static
+    // evaluator has no disturbance-step mechanism — it derives deficit from baseLoad).
+    const staticRef = evaluateUnderfrequencySystem({
+      system: { ...study.system, baseLoadMw: study.system.baseLoadMw + deltaMw },
+      generators: study.generators,
+      uflsStages: study.uflsStages,
+    });
+    expect(staticRef.status).toBe('VALID');
+    if (staticRef.status !== 'VALID') return;
+    expect(staticRef.value.steadyStateStatus).toBe('COLLAPSE');
+    const state = { ...createInitialUnderfrequencyState('UFR-01'), study };
+    const model = buildUnderfrequencyAnalysisModel(state, staticRef.value, run);
+    expect(model.status).toBe('VALID');
+    expect(model.headline.label).toBe('COLLAPSE');
+    expect(model.headline.tone).toBe('danger');
+    expect(model.steadyStateStatus).toBe('COLLAPSE');
+    expect(model.finalFrequencyHz).toBeNull();
+  });
+});
