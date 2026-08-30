@@ -97,6 +97,36 @@ export function buildUnderfrequencyAnalysisModel(
   const collapse = run ? run.steadyStateStatus === 'COLLAPSE' : staticResult.steadyStateStatus === 'COLLAPSE';
   const finalFrequency = run ? run.finalFrequencyHz : staticResult.steadyStateHz;
 
+  // The static reference has no disturbance-step mechanism (balanced input →
+  // zero deficit), so shed amounts must be read from the run when one exists.
+  // The run's UFLS_TRIP events are the authoritative engine output; fall back
+  // to the static result only when no run is present.
+  const runTrips = run && run.status === 'VALID'
+    ? run.events.filter((e) => e.type === 'UFLS_TRIP')
+    : [];
+  const runShedMw = runTrips.reduce((sum, e) => sum + (e.shedMw ?? 0), 0);
+  const runOperatedStages = new Set(runTrips.map((e) => e.stageId).filter((id): id is string => id !== undefined));
+  const totalShedMw = runShedMw > 0 || runOperatedStages.size > 0
+    ? runShedMw
+    : staticResult.totalShedMw;
+  const operatedStages = run && run.status === 'VALID' && runOperatedStages.size > 0
+    ? runOperatedStages.size
+    : staticResult.uflsStageResults.filter((r) => r.operated).length;
+  // Initial deficit/ROCOF report the first post-disturbance snapshot when a run
+  // exists, since the static reference is balanced (no disturbance-step input).
+  // The timeline begins at a balanced pre-disturbance snapshot, so walk forward
+  // to the first snapshot that has actually departed from nominal frequency.
+  const fNominal = state.study.system.fNominalHz;
+  const postDisturbanceSnapshot = run && run.status === 'VALID'
+    ? run.snapshots.find((s) => s.frequencyHz < fNominal)
+    : undefined;
+  const initialDeficitMw = postDisturbanceSnapshot
+    ? postDisturbanceSnapshot.deficitMw
+    : staticResult.initialDeficitMw;
+  const initialRocofHzPerSec = postDisturbanceSnapshot
+    ? postDisturbanceSnapshot.rocofHzPerSec
+    : staticResult.initialRocofHzPerSec;
+
   let headline: UnderfrequencyHeadline;
   if (collapse) {
     headline = {
@@ -104,11 +134,10 @@ export function buildUnderfrequencyAnalysisModel(
       detail: `Frequency unrecoverable at ${numberText(run?.finalTimeSec)} s; all governor headroom exhausted.`,
       tone: 'danger',
     };
-  } else if (staticResult.totalShedMw > 0) {
-    const operated = staticResult.uflsStageResults.filter((r) => r.operated).length;
+  } else if (totalShedMw > 0) {
     headline = {
-      label: `UFLS ${operated} STAGE${operated === 1 ? '' : 'S'} OPERATED`,
-      detail: `${numberText(staticResult.totalShedMw, 1)} MW shed; frequency arrested to ${numberText(finalFrequency)} Hz.`,
+      label: `UFLS ${operatedStages} STAGE${operatedStages === 1 ? '' : 'S'} OPERATED`,
+      detail: `${numberText(totalShedMw, 1)} MW shed; frequency arrested to ${numberText(finalFrequency)} Hz.`,
       tone: 'danger',
     };
   } else {
@@ -118,8 +147,6 @@ export function buildUnderfrequencyAnalysisModel(
       tone: 'success',
     };
   }
-
-  const operatedStages = staticResult.uflsStageResults.filter((r) => r.operated).length;
 
   const checks: UnderfrequencyCheckRow[] = [
     {
@@ -137,8 +164,8 @@ export function buildUnderfrequencyAnalysisModel(
     {
       id: 'ROCOF',
       label: 'Initial ROCOF',
-      status: Number.isFinite(staticResult.initialRocofHzPerSec) ? 'PASS' : 'FAIL',
-      detail: `df/dt|₀ = ${numberText(staticResult.initialRocofHzPerSec)} Hz/s for D₀ = ${numberText(staticResult.initialDeficitMw, 0)} MW.`,
+      status: Number.isFinite(initialRocofHzPerSec) ? 'PASS' : 'FAIL',
+      detail: `df/dt|₀ = ${numberText(initialRocofHzPerSec)} Hz/s for D₀ = ${numberText(initialDeficitMw, 0)} MW.`,
     },
     {
       id: 'UFLS_ADEQUACY',
@@ -147,7 +174,7 @@ export function buildUnderfrequencyAnalysisModel(
       detail: collapse
         ? 'Shedding could not arrest the deficit.'
         : operatedStages > 0
-          ? `${operatedStages} stage(s) shed ${numberText(staticResult.totalShedMw, 1)} MW.`
+          ? `${operatedStages} stage(s) shed ${numberText(totalShedMw, 1)} MW.`
           : 'No stage needed; governor/droop covers the deficit.',
     },
   ];
@@ -162,14 +189,14 @@ export function buildUnderfrequencyAnalysisModel(
     {
       id: 'ROCOF',
       label: 'ROCOF',
-      value: `${numberText(staticResult.initialRocofHzPerSec)} Hz/s`,
-      tone: Number.isFinite(staticResult.initialRocofHzPerSec) && staticResult.initialRocofHzPerSec < -0.5 ? 'warning' : 'info',
+      value: `${numberText(initialRocofHzPerSec)} Hz/s`,
+      tone: Number.isFinite(initialRocofHzPerSec) && initialRocofHzPerSec < -0.5 ? 'warning' : 'info',
     },
     {
       id: 'DEFICIT',
       label: 'DEFISIT',
-      value: `${numberText(staticResult.initialDeficitMw, 0)} MW`,
-      tone: staticResult.initialDeficitMw > 0 ? 'warning' : 'normal',
+      value: `${numberText(initialDeficitMw, 0)} MW`,
+      tone: initialDeficitMw > 0 ? 'warning' : 'normal',
     },
     {
       id: 'MIN-F',
@@ -184,23 +211,23 @@ export function buildUnderfrequencyAnalysisModel(
   const calculationDetails: string[] = [
     `S_base = Σ MVA_i = ${numberText(staticResult.sBaseMva, 0)} MVA.`,
     `H_sys = Σ (H_i·MVA_i)/S_base = ${numberText(staticResult.hSysSec, 4)} s.`,
-    `D₀ (initial deficit) = ${numberText(staticResult.initialDeficitMw, 0)} MW.`,
-    `ROCOF₀ = −(f_nom/(2·H_sys))·(D₀/S_base) = ${numberText(staticResult.initialRocofHzPerSec, 4)} Hz/s.`,
+    `D₀ (initial deficit) = ${numberText(initialDeficitMw, 0)} MW.`,
+    `ROCOF₀ = −(f_nom/(2·H_sys))·(D₀/S_base) = ${numberText(initialRocofHzPerSec, 4)} Hz/s.`,
     `β_pu (unsaturated stiffness) = ${numberText(staticResult.betaPu, 0)} pu → ${numberText(staticResult.betaMwPerHz, 1)} MW/Hz.`,
   ];
   if (finalFrequency !== null) {
     const dFsHz = finalFrequency - state.study.system.fNominalHz;
     calculationDetails.push(`Δf_ss = −f_nom·D/β_pu = ${numberText(dFsHz, 4)} Hz (settle ${numberText(finalFrequency, 4)} Hz).`);
   }
-  if (staticResult.totalShedMw > 0) {
-    calculationDetails.push(`Total UFLS shed = ${numberText(staticResult.totalShedMw, 1)} MW across ${operatedStages} stage(s).`);
+  if (totalShedMw > 0) {
+    calculationDetails.push(`Total UFLS shed = ${numberText(totalShedMw, 1)} MW across ${operatedStages} stage(s).`);
   }
   if (collapse) {
     calculationDetails.push('Governor slope exhausted (β_pu → 0); no equilibrium exists — COLLAPSE.');
   }
 
   // Phase narrative from the timeline events (if available).
-  const phases = buildPhases(run, collapse, staticResult.totalShedMw);
+  const phases = buildPhases(run, collapse, totalShedMw);
 
   return {
     status: 'VALID',

@@ -1,0 +1,189 @@
+.simulator-theme.underfrequency-gen-diagram {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 7px;
+  background: var(--sim-panel);
+  overflow: hidden;
+}
+
+.underfrequency-gen-diagram-header {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--sim-border-soft);
+}
+
+.underfrequency-gen-diagram-heading {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.underfrequency-gen-diagram-heading > span {
+  color: var(--sim-text-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.underfrequency-gen-diagram-heading > h3 {
+  margin: 0;
+  color: var(--sim-text);
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: -.01em;
+}
+
+.underfrequency-gen-diagram-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  color: var(--sim-text-secondary);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10.5px;
+}
+
+.underfrequency-gen-diagram-message {
+  display: grid;
+  gap: 3px;
+  padding: 14px 12px;
+  color: var(--sim-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.underfrequency-gen-diagram-message b {
+  color: var(--sim-amber);
+  font-size: 9px;
+  letter-spacing: .06em;
+}
+
+.underfrequency-gen-diagram-rows {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+}
+
+.underfrequency-gen-diagram-row {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.7fr) minmax(0, 0.7fr);
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--sim-border);
+  border-left: 3px solid var(--sim-border-strong);
+  border-radius: 5px;
+  background: var(--sim-panel-raised);
+  padding: 8px 10px;
+}
+
+.underfrequency-gen-diagram-row[data-tone='danger'] { border-left-color: var(--sim-red); }
+.underfrequency-gen-diagram-row[data-tone='warning'] { border-left-color: var(--sim-amber); }
+.underfrequency-gen-diagram-row[data-tone='success'] { border-left-color: var(--sim-green); }
+
+.underfrequency-gen-row-identity {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.underfrequency-gen-row-identity b {
+  overflow: hidden;
+  color: var(--sim-text);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.underfrequency-gen-row-tag {
+  justify-self: start;
+  border: 1px solid var(--sim-border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+
+.underfrequency-gen-row-tag[data-tone='danger'] { border-color: var(--sim-red); color: var(--sim-red); }
+.underfrequency-gen-row-tag[data-tone='warning'] { border-color: var(--sim-amber); color: var(--sim-amber); }
+.underfrequency-gen-row-tag[data-tone='success'] { border-color: var(--sim-green); color: var(--sim-green); }
+
+.underfrequency-gen-row-metric,
+.underfrequency-gen-row-stat {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.underfrequency-gen-row-metric > span,
+.underfrequency-gen-row-stat > span {
+  color: var(--sim-text-muted);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.underfrequency-gen-row-metric > b {
+  overflow: hidden;
+  color: var(--sim-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.underfrequency-gen-row-stat > b {
+  overflow: hidden;
+  color: var(--sim-text-secondary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.underfrequency-gen-row-stat > small {
+  overflow: hidden;
+  color: var(--sim-text-dim);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.underfrequency-gen-row-bar {
+  position: relative;
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid var(--sim-border);
+  border-radius: 5px;
+  background: var(--sim-panel);
+}
+
+.underfrequency-gen-row-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--gen-output);
+  background: var(--sim-accent);
+  opacity: .85;
+}
+
+.underfrequency-gen-row-response {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--gen-response);
+  background: var(--sim-accent-soft);
+  opacity: .55;
+}
+
+@media (max-width: 720px) {
+  .underfrequency-gen-diagram-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .underfrequency-gen-row-bar { grid-column: 1 / -1; }
+}

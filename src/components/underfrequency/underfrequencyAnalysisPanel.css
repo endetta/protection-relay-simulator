@@ -1,0 +1,239 @@
+.simulator-theme.underfrequency-analysis-panel {
+  min-width: 0;
+  color: var(--sim-text);
+  background: var(--sim-panel);
+}
+
+.underfrequency-analysis-invalid {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 9px;
+  border: 1px solid var(--sim-amber);
+  border-left: 3px solid var(--sim-amber);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 8px 10px;
+  color: var(--sim-amber);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.underfrequency-analysis-invalid b {
+  font-size: 10px;
+  letter-spacing: .055em;
+}
+
+.underfrequency-analysis-empty {
+  color: var(--sim-text-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.underfrequency-analysis-description {
+  margin: 0;
+  color: var(--sim-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.underfrequency-analysis-pln {
+  display: grid;
+  gap: 3px;
+  margin: 10px 0 0;
+  border: 1px solid var(--sim-amber);
+  border-left: 3px solid var(--sim-amber);
+  border-radius: 5px;
+  background: var(--sim-panel);
+  padding: 8px 9px;
+  color: var(--sim-text-secondary);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.underfrequency-analysis-pln b {
+  color: var(--sim-amber);
+  font-size: 10px;
+  letter-spacing: .05em;
+}
+
+.underfrequency-analysis-checks {
+  display: grid;
+  gap: 8px;
+}
+
+.underfrequency-analysis-checks > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  border: 1px solid var(--sim-border);
+  border-left: 3px solid var(--sim-border-strong);
+  border-radius: 5px;
+  background: var(--sim-panel-raised);
+  padding: 8px 9px;
+}
+
+.underfrequency-analysis-checks > div[data-tone='success'] { border-left-color: var(--sim-green); }
+.underfrequency-analysis-checks > div[data-tone='danger'] { border-left-color: var(--sim-red); }
+
+.underfrequency-analysis-checks span {
+  color: var(--sim-text-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.underfrequency-analysis-checks b {
+  color: var(--sim-text);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.underfrequency-analysis-checks small {
+  overflow: hidden;
+  color: var(--sim-text-secondary);
+  font-size: 10px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+}
+
+.underfrequency-analysis-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.underfrequency-analysis-tiles > div {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  border: 1px solid var(--sim-border);
+  border-left: 3px solid var(--sim-border-strong);
+  border-radius: 5px;
+  background: var(--sim-panel-raised);
+  padding: 8px 9px;
+}
+
+.underfrequency-analysis-tiles > div[data-tone='danger'] { border-left-color: var(--sim-red); }
+.underfrequency-analysis-tiles > div[data-tone='warning'] { border-left-color: var(--sim-amber); }
+.underfrequency-analysis-tiles > div[data-tone='success'] { border-left-color: var(--sim-green); }
+
+.underfrequency-analysis-tiles span {
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.underfrequency-analysis-tiles b {
+  overflow: hidden;
+  color: var(--sim-text);
+  font-size: 22px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.underfrequency-analysis-phases {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.underfrequency-analysis-phases li {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  border: 1px solid var(--sim-border);
+  border-left: 3px solid var(--sim-border-strong);
+  border-radius: 5px;
+  background: var(--sim-panel-raised);
+  padding: 8px 9px;
+}
+
+.underfrequency-analysis-phases li[data-tone='danger'] { border-left-color: var(--sim-red); }
+.underfrequency-analysis-phases li[data-tone='warning'] { border-left-color: var(--sim-amber); }
+.underfrequency-analysis-phases li[data-tone='success'] { border-left-color: var(--sim-green); }
+
+.underfrequency-analysis-phases time {
+  color: var(--sim-text-muted);
+  font-size: 10px;
+}
+
+.underfrequency-analysis-phases b {
+  overflow: hidden;
+  color: var(--sim-text);
+  font-size: 11px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.underfrequency-analysis-phases span {
+  grid-column: 1 / -1;
+  color: var(--sim-text-secondary);
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.underfrequency-analysis-calculation {
+  display: grid;
+  gap: 6px;
+}
+
+.underfrequency-analysis-calculation code {
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+  background: var(--sim-panel-raised);
+  padding: 7px 9px;
+  color: var(--sim-text-secondary);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.underfrequency-analysis-events {
+  display: grid;
+  gap: 7px;
+}
+
+.underfrequency-analysis-events > div {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+  background: var(--sim-panel-raised);
+  padding: 7px 9px;
+}
+
+.underfrequency-analysis-events span {
+  color: var(--sim-text-muted);
+  font-size: 10px;
+}
+
+.underfrequency-analysis-events b {
+  overflow: hidden;
+  color: var(--sim-text);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.underfrequency-analysis-events small {
+  grid-column: 1 / -1;
+  color: var(--sim-text-dim);
+  font-size: 9px;
+}
+
+@media (max-width: 380px) {
+  .underfrequency-analysis-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
