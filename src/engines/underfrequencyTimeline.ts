@@ -53,6 +53,13 @@ import {
 const SNAPSHOT_DT_SEC = 0.02;
 const EPS = 1e-12;
 const SETTLE_TOLERANCE = 1e-9;
+/** Stop dense-tracing a segment once within this of Δf_ss (Hz); the tail then snaps exact. */
+const TRACE_CONVERGED_HZ = 1e-4;
+/** Hard bound on a single segment's approach trace (s) — a safety net, never a tuning knob. */
+const MAX_APPROACH_SEC = 30;
+/** Minimum simulated window (s): a balanced/quick-settle run still spans this so the
+ *  nominal baseline is a visible straight line instead of a left-edge stub. */
+const MIN_SIM_WINDOW_SEC = 5;
 
 function timeTolerance(...values: readonly number[]): number {
   return 1e-10 * Math.max(1, ...values.map((value) => Math.abs(value)));
@@ -466,11 +473,22 @@ export function computeUnderfrequencyTimeline(
         ? next === undefined
         : Math.abs(dF0 - params.dFssHz) < SETTLE_TOLERANCE;
 
-    // If the next candidate is close enough to the settle point it is not an
-    // event we keep chasing — treat the system as settled.
+    // Dense-grid the segment. U01 § 8.3 requires a smooth ~0.02 s snapshot grid
+    // plus exact event-time samples. The pre-dense loop only emitted boundary
+    // samples, which is what made the curve read as a discrete signal (and left
+    // nominal/quick-settle runs as a 2-point left-edge stub). Every grid sample
+    // is the exact analytic closed form, so physics is never re-derived here.
     if (next && !settled) {
-      state.timeSec = canonicalTime(segmentStart + next.tau);
-      state.fHz = frequencyAt(params, segmentStartFHz, fNomHz, next.tau);
+      // Advance to the first event of this segment, filling the grid on the way.
+      const tauEnd = next.tau;
+      for (let tau = SNAPSHOT_DT_SEC; tau + EPS < tauEnd; tau += SNAPSHOT_DT_SEC) {
+        emitSnapshot(
+          segmentStart + tau,
+          frequencyAt(params, segmentStartFHz, fNomHz, tau),
+        );
+      }
+      state.timeSec = canonicalTime(segmentStart + tauEnd);
+      state.fHz = frequencyAt(params, segmentStartFHz, fNomHz, tauEnd);
       emitSnapshot(state.timeSec, state.fHz);
       next.fire();
       state.saturatedIds = saturatedAt(study, state, state.fHz);
@@ -485,7 +503,19 @@ export function computeUnderfrequencyTimeline(
       // non-positive, however, the frequency is over-corrected and must recover
       // upward (unsaturation events will fire on the next loop).
       if (params.dResidualMw > EPS) {
+        // Trace the runaway out to the window bound so the descent renders as a
+        // curve rather than a truncated stub, then latch COLLAPSE. The linear
+        // runaway keeps every sample finite; the y-axis clamps the footprint.
+        const tauEnd = MIN_SIM_WINDOW_SEC;
+        for (let tau = SNAPSHOT_DT_SEC; tau + EPS < tauEnd; tau += SNAPSHOT_DT_SEC) {
+          emitSnapshot(
+            segmentStart + tau,
+            frequencyAt(params, segmentStartFHz, fNomHz, tau),
+          );
+        }
         steadyStateStatus = 'COLLAPSE';
+        state.timeSec = canonicalTime(segmentStart + tauEnd);
+        state.fHz = frequencyAt(params, segmentStartFHz, fNomHz, tauEnd);
         pushEvent('COLLAPSE', state.timeSec);
         emitSnapshot(state.timeSec, state.fHz);
         break;
@@ -500,10 +530,30 @@ export function computeUnderfrequencyTimeline(
       continue;
     }
 
-    // Settled: snap to the exact closed-form steady state (bit-identical to the
-    // static result for the same final state).
-    state.timeSec = canonicalTime(state.timeSec + SNAPSHOT_DT_SEC);
-    state.fHz = fNomHz + params.dFssHz;
+    // Settled-shaping: no further event, so the analytic approach to the
+    // closed-form steady state is traced densely (for at least the minimum
+    // window, so a balanced / quick-settle run still spans a visible nominal
+    // baseline instead of collapsing to a left-edge stub), then snapped to the
+    // exact steady state. That final snap is the bit-identical parity anchor
+    // (U01 § 13.1); it must never be bypassed.
+    const fSettle = fNomHz + params.dFssHz;
+    const span = Math.abs(dF0 - params.dFssHz);
+    const tauConverge =
+      params.kPerSec > EPS && span > TRACE_CONVERGED_HZ
+        ? -Math.log(TRACE_CONVERGED_HZ / span) / params.kPerSec
+        : 0;
+    const tauWindow = Math.min(
+      MAX_APPROACH_SEC,
+      Math.max(MIN_SIM_WINDOW_SEC, tauConverge),
+    );
+    for (let tau = SNAPSHOT_DT_SEC; tau + EPS < tauWindow; tau += SNAPSHOT_DT_SEC) {
+      emitSnapshot(
+        segmentStart + tau,
+        frequencyAt(params, segmentStartFHz, fNomHz, tau),
+      );
+    }
+    state.timeSec = canonicalTime(segmentStart + tauWindow);
+    state.fHz = fSettle;
     state.saturatedIds = saturatedAt(study, state, state.fHz);
     emitSnapshot(state.timeSec, state.fHz);
     pushEvent('STEADY_STATE_REACHED', state.timeSec);

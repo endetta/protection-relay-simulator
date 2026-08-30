@@ -141,6 +141,8 @@ describe('Underfrequency timeline determinism & correctness (U01 § 13.2)', () =
   });
 
   it('never throws and always produces finite frequencies for random studies', () => {
+    // Dense-gridded runs emit ~50 samples/sec, so 500 studies legitimately
+    // exceed the 5 s default; this is a property check, not a timing check.
     let seed = 0x2026_0815;
     const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x1_0000_0000);
     for (let trial = 0; trial < 500; trial += 1) {
@@ -159,7 +161,7 @@ describe('Underfrequency timeline determinism & correctness (U01 § 13.2)', () =
         expect(Number.isFinite(snap.frequencyHz)).toBe(true);
       }
     }
-  });
+  }, 20000);
 
   it('emits an initial balanced snapshot at exactly nominal frequency', () => {
     const s = study(); // UFR-01: no disturbance
@@ -168,6 +170,38 @@ describe('Underfrequency timeline determinism & correctness (U01 § 13.2)', () =
     const first = run.snapshots[0];
     expect(first.frequencyHz).toBeCloseTo(50, 12);
     expect(first.deficitMw).toBeCloseTo(0, 9);
+  });
+});
+
+// ─────────────────────── Snapshot density (U01 § 8.3) ───────────────────────
+// The engine must emit a dense ~0.02 s snapshot grid plus exact event-time
+// samples. Regression: the pre-dense loop emitted only boundary samples, which
+// rendered the chart as a discrete signal and left balanced / quick-settle runs
+// as a 2-point left-edge stub.
+
+describe('Underfrequency timeline snapshot density (U01 § 8.3)', () => {
+  it('emits a dense ~0.02 s grid with no inter-sample gap above one step', () => {
+    for (const s of [study(), loseG1Study(), loadStepStudy(100)]) {
+      const run = computeUnderfrequencyTimeline(s);
+      expect(run.status).toBe('VALID');
+      if (run.status !== 'VALID') continue;
+      expect(run.snapshots.length).toBeGreaterThan(100);
+      let maxGap = 0;
+      for (let i = 1; i < run.snapshots.length; i += 1) {
+        maxGap = Math.max(maxGap, run.snapshots[i].engineeringTimeSec - run.snapshots[i - 1].engineeringTimeSec);
+      }
+      expect(maxGap).toBeLessThanOrEqual(0.02 + 1e-9);
+    }
+  });
+
+  it('spans a visible nominal baseline: even balanced runs start at t=0 and fill the window', () => {
+    const run = computeUnderfrequencyTimeline(study()); // UFR-01 balanced
+    expect(run.status).toBe('VALID');
+    if (run.status !== 'VALID') return;
+    expect(run.snapshots[0].engineeringTimeSec).toBeCloseTo(0, 9);
+    expect(run.snapshots[0].frequencyHz).toBeCloseTo(50, 9);
+    expect(run.finalTimeSec).toBeGreaterThanOrEqual(5);
+    expect(run.snapshots.length).toBeGreaterThanOrEqual(250);
   });
 });
 
