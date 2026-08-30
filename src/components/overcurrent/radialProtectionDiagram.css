@@ -1,4 +1,5 @@
 .overcurrent-sld {
+  
   min-width: 0;
   border: 1px solid var(--sim-border);
   border-radius: 6px;
