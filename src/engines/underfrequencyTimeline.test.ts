@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateUnderfrequencySystem } from './underfrequency';
 import { computeUnderfrequencyTimeline } from './underfrequencyTimeline';
+import { clampGovernorMw } from './underfrequencyGovernor';
 import type {
   UnderfrequencyGeneratorData,
   UnderfrequencyStudyDefinition,
@@ -170,6 +171,62 @@ describe('Underfrequency timeline determinism & correctness (U01 § 13.2)', () =
     const first = run.snapshots[0];
     expect(first.frequencyHz).toBeCloseTo(50, 12);
     expect(first.deficitMw).toBeCloseTo(0, 9);
+  });
+});
+
+// ────────────── Governor-path cross-check (U01 § 7 / § 13) ──────────────────
+// The timeline and the static solver must run the SAME governor physics. This
+// drives the preserved random studies and asserts the emitted per-generator
+// droop response at each snapshot equals `clampGovernorMw` at the same dfHz —
+// the shared primitives now back both paths, so a defect in the copy the
+// tests actually exercise (the static one) cannot pass while the production
+// copy (the timeline's) drifts. A tight tolerance absorbs the single-ulp
+// ambiguity of a snapshot landing exactly on a saturation crossing; any real
+// divergence (wrong sign, wrong clamp, wrong droop) is orders of magnitude
+// larger.
+
+describe('Underfrequency timeline emits the shared governor response (U01 § 7 / § 13)', () => {
+  it('matches clampGovernorMw at every online-generator snapshot for random studies', () => {
+    let seed = 0x81_50_2030;
+    const rand = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 0x1_0000_0000);
+    for (let trial = 0; trial < 200; trial += 1) {
+      const count = 2 + Math.floor(rand() * 3); // 2-4 generators
+      const generators: UnderfrequencyGeneratorData[] = [];
+      for (let i = 0; i < count; i += 1) {
+        const mva = 300 + Math.floor(rand() * 500);
+        const mwRated = mva * 0.85;
+        generators.push({
+          id: `G${i}`,
+          label: `G${i}`,
+          mwRated,
+          mva,
+          inertiaSec: 2.5 + rand() * 5,
+          droopPu: 0.03 + rand() * 0.05,
+          poles: rand() > 0.5 ? 2 : 4,
+          governorMaxMw: mwRated * 1.1,
+          initialMw: mwRated * 0.8,
+          status: 'ONLINE',
+        });
+      }
+      const steps: UnderfrequencyStudyDefinition['disturbanceSteps'] = [
+        { id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 100 + rand() * 700 },
+      ];
+      const s = study({ generators, uflsStages: [] }, steps);
+      const timeline = computeUnderfrequencyTimeline(s);
+      expect(timeline.status).toBe('VALID');
+      if (timeline.status !== 'VALID') continue;
+      const fNomHz = s.system.fNominalHz;
+      for (const snap of timeline.snapshots) {
+        const dfHz = snap.frequencyHz - fNomHz;
+        for (const g of generators) {
+          const gsnap = snap.generators.find((gg) => gg.generatorId === g.id);
+          if (gsnap && gsnap.status !== 'TRIPPED') {
+            const expected = clampGovernorMw(g, dfHz, fNomHz);
+            expect(Math.abs(gsnap.governorResponseMw - expected)).toBeLessThan(1e-9);
+          }
+        }
+      }
+    }
   });
 });
 

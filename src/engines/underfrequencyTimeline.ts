@@ -46,6 +46,12 @@ import {
   validateUnderfrequencySystem,
   validateUnderfrequencyUflsStages,
 } from './underfrequency';
+import {
+  clampGovernorMw,
+  governorHeadroomMw,
+  isGovernorSaturated,
+  perUnitSaturationDeviationHz,
+} from './underfrequencyGovernor';
 
 // ─────────────────────────────── Constants ──────────────────────────────────
 
@@ -89,19 +95,6 @@ interface EngineState {
 
 // ─────────────────────────────── Pure helpers ───────────────────────────────
 
-function headroomMw(g: UnderfrequencyGeneratorData): number {
-  return g.governorMaxMw - g.initialMw;
-}
-
-function saturationDeviationHz(g: UnderfrequencyGeneratorData, fNomHz: number): number {
-  return (-fNomHz * headroomMw(g) * g.droopPu) / g.mva;
-}
-
-/** A unit is saturated once its deviation has reached the saturation point. */
-function isSaturated(g: UnderfrequencyGeneratorData, fNomHz: number, dfHz: number): boolean {
-  return dfHz <= saturationDeviationHz(g, fNomHz);
-}
-
 function collectIssues(study: UnderfrequencyStudyDefinition): readonly DomainIssue[] {
   return [
     ...validateUnderfrequencySystem(study.system),
@@ -129,10 +122,8 @@ function generatorSnapshot(
     };
   }
   const dfHz = fHz - fNomHz;
-  const headroom = headroomMw(g);
-  const droopMw = saturated
-    ? headroom
-    : Math.max(0, Math.min(headroom, (-dfHz / fNomHz) * (g.mva / g.droopPu)));
+  const headroom = governorHeadroomMw(g);
+  const droopMw = saturated ? headroom : clampGovernorMw(g, dfHz, fNomHz);
   const status: UnderfrequencyGeneratorStatus = saturated
     ? 'AT_GOVERNOR_LIMIT'
     : g.status === 'ONLINE'
@@ -179,7 +170,7 @@ function segmentParams(
   let saturatedHeadroomMw = 0;
   for (const g of online) {
     if (state.saturatedIds.has(g.id)) {
-      saturatedHeadroomMw += headroomMw(g);
+      saturatedHeadroomMw += governorHeadroomMw(g);
     } else {
       betaUnsat += g.mva / g.droopPu;
     }
@@ -392,7 +383,7 @@ export function computeUnderfrequencyTimeline(
     // 2) Governor saturation / unsaturation crossings.
     for (const g of study.generators) {
       if (!state.onlineIds.has(g.id)) continue;
-      const satDelta = saturationDeviationHz(g, fNomHz);
+      const satDelta = perUnitSaturationDeviationHz(g, fNomHz);
       const saturatedNow = state.saturatedIds.has(g.id);
       const tau = timeToReach(params, segmentStartFHz, fNomHz, satDelta);
       if (tau === null || tau <= EPS) continue;
@@ -589,7 +580,7 @@ function saturatedAt(
   const saturated = new Set<string>();
   for (const g of study.generators) {
     if (!state.onlineIds.has(g.id)) continue;
-    if (isSaturated(g, study.system.fNominalHz, dfHz)) saturated.add(g.id);
+    if (isGovernorSaturated(g, study.system.fNominalHz, dfHz)) saturated.add(g.id);
   }
   return saturated;
 }
@@ -664,12 +655,9 @@ function buildSnapshot(
   // Instantaneous net deficit of the swing equation: residual pre-governor
   // deficit minus the governor response of the online set.
   const respMw = online.reduce((sum, g) => {
-    if (state.saturatedIds.has(g.id)) return sum + headroomMw(g);
+    if (state.saturatedIds.has(g.id)) return sum + governorHeadroomMw(g);
     const dfHz = frequencyHz - fNomHz;
-    return (
-      sum +
-      Math.max(0, Math.min(headroomMw(g), (-dfHz / fNomHz) * (g.mva / g.droopPu)))
-    );
+    return sum + clampGovernorMw(g, dfHz, fNomHz);
   }, 0);
   const deficitMw = state.dDeficitMw - respMw;
   const rocofHzPerSec =

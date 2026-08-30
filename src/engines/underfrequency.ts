@@ -30,6 +30,11 @@ import type {
   UflsStageSettings,
 } from '../types/underfrequency';
 import { nearlyEqual } from './overcurrent';
+import {
+  governorHeadroomMw,
+  perUnitDroopMw,
+  perUnitSaturationDeviationHz,
+} from './underfrequencyGovernor';
 
 // ─────────────────────────────── Issue helpers ─────────────────────────────
 
@@ -79,73 +84,10 @@ export function aggregateInertia(
   return numer / sBaseMva;
 }
 
-// ─────────────────────────────── Governor math ─────────────────────────────
-// U01 § 7.
-
-/** Governance headroom for a unit: `governorMaxMw - initialMw`. */
-export function governorHeadroomMw(generator: UnderfrequencyGeneratorData): number {
-  return generator.governorMaxMw - generator.initialMw;
-}
-
-/**
- * Droop response at frequency deviation `dfHz` (MW), unsaturated then clamped
- * to [0, headroom]. Because dfHz < 0 for underfrequency, the response is ≥ 0.
- * @param fNominalHz — required to scale the per-unit droop (U01 § 7.1).
- */
-export function clampGovernorMw(
-  generator: UnderfrequencyGeneratorData,
-  dfHz: number,
-  fNominalHz: number,
-): number {
-  const headroom = governorHeadroomMw(generator);
-  const response = (-dfHz / fNominalHz) * (generator.mva / generator.droopPu);
-  return Math.min(headroom, Math.max(0, response));
-}
-
-/** Per-unit droop response basis (MW) before clamping, with f_nom applied. */
-export function perUnitDroopMw(
-  generator: UnderfrequencyGeneratorData,
-  dfHz: number,
-  fNominalHz: number,
-): number {
-  if (!isFinitePositive(fNominalHz)) return 0;
-  return (-dfHz / fNominalHz) * (generator.mva / generator.droopPu);
-}
-
-/**
- * Saturation deviation for a unit — the df (Hz) at which it just hits
- * headroom. `Δf_i,sat = -f_nom·headroom_i·R_i / MVA_i`.
- */
-export function perUnitSaturationDeviationHz(
-  generator: UnderfrequencyGeneratorData,
-  fNominalHz: number,
-): number {
-  const headroom = governorHeadroomMw(generator);
-  if (!isFinitePositive(fNominalHz) || generator.mva <= 0 || generator.droopPu <= 0) {
-    return Number.NaN;
-  }
-  return (-fNominalHz * headroom * generator.droopPu) / generator.mva;
-}
-
-/**
- * System stiffness of the unsaturated set.
- * `β_pu = Σ_unsaturated (MVA_i/R_i)`.
- */
-export function systemStiffnessBetaPu(
-  generators: readonly UnderfrequencyGeneratorData[],
-  dfHz: number,
-  fNominalHz: number,
-): number {
-  let beta = 0;
-  for (const g of generators) {
-    const satDelta = perUnitSaturationDeviationHz(g, fNominalHz);
-    if (!Number.isFinite(satDelta)) continue;
-    // A unit is saturated once df is beyond (more negative than) its sat delta.
-    if (dfHz <= satDelta) continue;
-    beta += g.mva / g.droopPu;
-  }
-  return beta;
-}
+// ---------------------------------------------------------------------------
+// Governor / droop math (U01 § 7) lives in underfrequencyGovernor.ts — the one
+// deep module consumed by both the static solver here and the time-domain run.
+// ---------------------------------------------------------------------------
 
 // ─────────────────────────────── Static reference ──────────────────────────
 // Aggregates the closed-form steady-state for a given (already-resolved)
