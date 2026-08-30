@@ -55,7 +55,7 @@ export function UnderfrequencySimulator() {
     checks: true,
     summary: true,
     phases: false,
-    calculation: false,
+    calculation: true,
     events: false,
   }));
 

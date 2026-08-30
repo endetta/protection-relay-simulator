@@ -192,11 +192,11 @@
   border: 1px solid var(--sim-border);
   border-radius: 4px;
   background: var(--sim-panel-raised);
-  padding: 7px 9px;
-  color: var(--sim-text-secondary);
+  padding: 7px 10px;
+  color: var(--sim-text);
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 10px;
-  line-height: 1.45;
+  font-size: 12px;
+  line-height: 1.5;
   white-space: pre-wrap;
 }
 
@@ -208,7 +208,8 @@
 .underfrequency-analysis-events > div {
   display: grid;
   min-width: 0;
-  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  grid-template-columns: auto 1fr auto;
   gap: 2px 10px;
   border: 1px solid var(--sim-border);
   border-radius: 4px;
@@ -230,9 +231,13 @@
 }
 
 .underfrequency-analysis-events small {
-  grid-column: 1 / -1;
-  color: var(--sim-text-dim);
-  font-size: 11px;
+  justify-self: end;
+  overflow: hidden;
+  color: var(--sim-text-muted);
+  font-size: 12px;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 380px) {

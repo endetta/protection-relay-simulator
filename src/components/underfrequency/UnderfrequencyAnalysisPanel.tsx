@@ -39,6 +39,22 @@ const TONE_TO_BADGE: Record<UnderfrequencyTone, 'success' | 'danger' | 'warning'
   normal: 'neutral',
 };
 
+/** Readable per-event labels for the raw engine event tokens (U01 § 8). */
+const EVENT_LABELS: Record<string, string> = {
+  DISTURBANCE_APPLIED: 'Disturbance applied',
+  GOVERNOR_SATURATION: 'Governor saturated',
+  GOVERNOR_UNSATURATION: 'Governor released',
+  UFLS_ARMED: 'UFLS armed',
+  UFLS_TIMER_RESET: 'UFLS timer reset',
+  UFLS_TRIP: 'UFLS trip',
+  STEADY_STATE_REACHED: 'Steady state reached',
+  COLLAPSE: 'Collapse',
+};
+
+function eventLabel(type: string): string {
+  return EVENT_LABELS[type] ?? type.replace(/_/g, ' ').toLowerCase();
+}
+
 function checkTone(status: 'PASS' | 'FAIL' | 'NOT_EVALUABLE'): 'success' | 'danger' | 'neutral' {
   if (status === 'PASS') return 'success';
   if (status === 'FAIL') return 'danger';
@@ -91,6 +107,29 @@ export function UnderfrequencyAnalysisPanel({
         <div className='underfrequency-analysis-empty'>{displayedHeadline.detail}</div>
       </ParameterGroup>
 
+      {model.summaryTiles.length > 0 && (
+        <ParameterGroup
+          title='Ringkasan'
+          open={sections.summary}
+          onOpenChange={(open) => setOpen('summary', open)}
+          badge={`${model.summaryTiles.length} TILES`}
+          badgeTone='info'
+          intl={ANALYSIS_GROUP_INTL}
+          summary={(
+            <SectionSummary columns={1}><SummaryMetric label='Headline' value={model.headline.label} tone={TONE_TO_BADGE[model.headline.tone]} /></SectionSummary>
+          )}
+        >
+          <div className='underfrequency-analysis-tiles'>
+            {model.summaryTiles.map((tile) => (
+              <div key={tile.id} data-tone={TONE_TO_BADGE[tile.tone]}>
+                <span>{tile.label}</span>
+                <b className='font-eng'>{tile.value}</b>
+              </div>
+            ))}
+          </div>
+        </ParameterGroup>
+      )}
+
       {model.studyLabel && (
         <ParameterGroup
           title='Studi'
@@ -137,29 +176,6 @@ export function UnderfrequencyAnalysisPanel({
           ))}
         </div>
       </ParameterGroup>
-
-      {model.summaryTiles.length > 0 && (
-        <ParameterGroup
-          title='Ringkasan'
-          open={sections.summary}
-          onOpenChange={(open) => setOpen('summary', open)}
-          badge={`${model.summaryTiles.length} TILES`}
-          badgeTone='info'
-          intl={ANALYSIS_GROUP_INTL}
-          summary={(
-            <SectionSummary columns={1}><SummaryMetric label='Headline' value={model.headline.label} tone={TONE_TO_BADGE[model.headline.tone]} /></SectionSummary>
-          )}
-        >
-          <div className='underfrequency-analysis-tiles'>
-            {model.summaryTiles.map((tile) => (
-              <div key={tile.id} data-tone={TONE_TO_BADGE[tile.tone]}>
-                <span>{tile.label}</span>
-                <b className='font-eng'>{tile.value}</b>
-              </div>
-            ))}
-          </div>
-        </ParameterGroup>
-      )}
 
       {model.phases.length > 0 && (
         <ParameterGroup
@@ -219,8 +235,8 @@ export function UnderfrequencyAnalysisPanel({
             {model.events.map((event) => (
               <div key={event.id}>
                 <span className='font-eng'>{formatEngineeringNumber(event.timeSec)} s</span>
-                <b>{event.type.replace(/_/g, ' ')}</b>
-                <small>{event.stageId ?? event.generatorId ?? ''}</small>
+                <b>{eventLabel(event.type)}</b>
+                <small>{event.stageId ?? event.generatorId ?? ''}{event.shedMw != null ? ` · ${formatEngineeringNumber(event.shedMw)} MW` : ''}</small>
               </div>
             ))}
           </div>

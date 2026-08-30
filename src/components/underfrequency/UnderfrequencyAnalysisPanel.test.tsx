@@ -81,4 +81,20 @@ describe('UFR Analysis / Learning panel', () => {
     expect(markup).toContain('RESTRAIN');
     expect(markup).toContain('Tidak ada UFLS yang beroperasi');
   });
+
+  it('places the Ringkasan group above Studi (readability priority)', () => {
+    const markup = renderPanel('UFR-02');
+    const ringkasanIndex = markup.indexOf('Ringkasan');
+    const studiIndex = markup.indexOf('Studi');
+    expect(ringkasanIndex).toBeGreaterThanOrEqual(0);
+    expect(studiIndex).toBeGreaterThan(ringkasanIndex);
+  });
+
+  it('renders each event row as a 3-cell grid (time | label | id·MW)', () => {
+    const markup = renderPanel('UFR-02');
+    // A UFLS_TRIP row should place its generator/stage tag inside the same row
+    // cell (not dropped to a second line) with the shed MW on the right.
+    expect(markup).toMatch(/<b>UFLS trip<\/b>\s*<small>[^<]+/);
+    expect(markup).toMatch(/<small>[^<]*MW<\/small>/);
+  });
 });
