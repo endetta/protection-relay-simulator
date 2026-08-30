@@ -18,6 +18,7 @@ import type {
 } from '../../types/underfrequency';
 import { formatEngineeringNumber, formatFrequencyHz } from '../../utils/engineering';
 import { EngineeringViewOverlay } from '../shared/EngineeringViewOverlay';
+import { OverlayScrollArea } from '../shared/OverlayScrollArea';
 import './frequencyTimelineChart.css';
 
 export interface FrequencyTimelineChartProps {
@@ -315,108 +316,114 @@ export function FrequencyTimelineChart({
               <span><i data-kind='trip' /> UFLS trip</span>
             </div>
 
-            <svg
-              viewBox={`0 0 ${W} ${H}`}
-              preserveAspectRatio='xMidYMid meet'
-              role='img'
-              aria-labelledby={`${titleId}-plot`}
-              className='underfrequency-ftc-svg'
+            <OverlayScrollArea
+              ariaLabel='Area scroll timeline frekuensi'
+              className='underfrequency-ftc-scroll'
+              orientation='horizontal'
             >
-              <desc id={`${titleId}-plot`}>
-                System frequency terhadap engineering time dengan UFLS thresholds, penanda trip, dan garis frekuensi nominal.
-              </desc>
+              <svg
+                viewBox={`0 0 ${W} ${H}`}
+                preserveAspectRatio='xMidYMid meet'
+                role='img'
+                aria-labelledby={`${titleId}-plot`}
+                className='underfrequency-ftc-svg'
+              >
+                <desc id={`${titleId}-plot`}>
+                  System frequency terhadap engineering time dengan UFLS thresholds, penanda trip, dan garis frekuensi nominal.
+                </desc>
 
-              <defs>
-                <clipPath id={`ftc-clip-${titleId.replace(/:/g, '')}`}>
-                  <rect x={MARGIN_LEFT} y={MARGIN_TOP} width={PLOT_WIDTH} height={PLOT_HEIGHT} />
-                </clipPath>
-              </defs>
+                <defs>
+                  <clipPath id={`ftc-clip-${titleId.replace(/:/g, '')}`}>
+                    <rect x={MARGIN_LEFT} y={MARGIN_TOP} width={PLOT_WIDTH} height={PLOT_HEIGHT} />
+                  </clipPath>
+                </defs>
 
-              {model.yAxis.ticks.map((tick) => (
-                <g key={`y:${tick}`}>
-                  <line className='underfrequency-ftc-grid' x1={MARGIN_LEFT} y1={sy(tick)} x2={W - MARGIN_RIGHT} y2={sy(tick)} />
-                  <text className='underfrequency-ftc-tick font-eng' x={MARGIN_LEFT - 9} y={sy(tick) + 3} textAnchor='end'>
-                    {tick.toFixed(1)}
-                  </text>
-                </g>
-              ))}
-              {model.xAxis.ticks.map((tick) => (
-                <g key={`x:${tick}`}>
-                  <line className='underfrequency-ftc-grid' x1={sx(tick)} y1={MARGIN_TOP} x2={sx(tick)} y2={H - MARGIN_BOTTOM} />
-                  <text className='underfrequency-ftc-tick font-eng' x={sx(tick)} y={H - MARGIN_BOTTOM + 18} textAnchor='middle'>
-                    {Number.isInteger(tick) ? tick.toFixed(0) : tick.toFixed(1)}
-                  </text>
-                </g>
-              ))}
+                {model.yAxis.ticks.map((tick) => (
+                  <g key={`y:${tick}`}>
+                    <line className='underfrequency-ftc-grid' x1={MARGIN_LEFT} y1={sy(tick)} x2={W - MARGIN_RIGHT} y2={sy(tick)} />
+                    <text className='underfrequency-ftc-tick font-eng' x={MARGIN_LEFT - 9} y={sy(tick) + 3} textAnchor='end'>
+                      {tick.toFixed(1)}
+                    </text>
+                  </g>
+                ))}
+                {model.xAxis.ticks.map((tick) => (
+                  <g key={`x:${tick}`}>
+                    <line className='underfrequency-ftc-grid' x1={sx(tick)} y1={MARGIN_TOP} x2={sx(tick)} y2={H - MARGIN_BOTTOM} />
+                    <text className='underfrequency-ftc-tick font-eng' x={sx(tick)} y={H - MARGIN_BOTTOM + 18} textAnchor='middle'>
+                      {Number.isInteger(tick) ? tick.toFixed(0) : tick.toFixed(1)}
+                    </text>
+                  </g>
+                ))}
 
-              <g clipPath={`url(#ftc-clip-${titleId.replace(/:/g, '')})`}>
-                <rect className='underfrequency-ftc-plot-bg' x={MARGIN_LEFT} y={MARGIN_TOP} width={PLOT_WIDTH} height={PLOT_HEIGHT} />
+                <g clipPath={`url(#ftc-clip-${titleId.replace(/:/g, '')})`}>
+                  <rect className='underfrequency-ftc-plot-bg' x={MARGIN_LEFT} y={MARGIN_TOP} width={PLOT_WIDTH} height={PLOT_HEIGHT} />
 
-                {/* Nominal frequency line */}
-                <line
-                  className='underfrequency-ftc-nominal'
-                  x1={MARGIN_LEFT}
-                  y1={sy(model.nominalFrequencyHz)}
-                  x2={W - MARGIN_RIGHT}
-                  y2={sy(model.nominalFrequencyHz)}
-                />
-
-                {/* UFLS stage threshold lines */}
-                {model.stageLines.filter((s) => s.enabled).map((line) => (
+                  {/* Nominal frequency line */}
                   <line
-                    key={line.stageId}
-                    className='underfrequency-ftc-stage'
-                    data-operated={line.operated}
+                    className='underfrequency-ftc-nominal'
                     x1={MARGIN_LEFT}
-                    y1={sy(line.thresholdHz)}
+                    y1={sy(model.nominalFrequencyHz)}
                     x2={W - MARGIN_RIGHT}
-                    y2={sy(line.thresholdHz)}
+                    y2={sy(model.nominalFrequencyHz)}
                   />
-                ))}
 
-                {/* Frequency curve */}
-                {curvePath && <path className='underfrequency-ftc-curve' d={curvePath} />}
+                  {/* UFLS stage threshold lines */}
+                  {model.stageLines.filter((s) => s.enabled).map((line) => (
+                    <line
+                      key={line.stageId}
+                      className='underfrequency-ftc-stage'
+                      data-operated={line.operated}
+                      x1={MARGIN_LEFT}
+                      y1={sy(line.thresholdHz)}
+                      x2={W - MARGIN_RIGHT}
+                      y2={sy(line.thresholdHz)}
+                    />
+                  ))}
 
-                {/* UFLS trip markers */}
-                {model.tripMarkers.map((marker, index) => (
-                  <g key={`${marker.stageId}:${marker.timeSec}:${index}`} className='underfrequency-ftc-trip'>
-                    <line x1={sx(marker.timeSec)} y1={MARGIN_TOP} x2={sx(marker.timeSec)} y2={H - MARGIN_BOTTOM} />
-                    <circle cx={sx(marker.timeSec)} cy={sy(model.yAxis.max)} r='3' />
-                  </g>
-                ))}
+                  {/* Frequency curve */}
+                  {curvePath && <path className='underfrequency-ftc-curve' d={curvePath} />}
 
-                {/* Collapse / steady-state marker */}
-                {model.collapseEvent && (
-                  <g className='underfrequency-ftc-collapse' aria-label='Kolaps frekuensi'>
-                    <line x1={sx(model.collapseEvent.timeSec)} y1={MARGIN_TOP} x2={sx(model.collapseEvent.timeSec)} y2={H - MARGIN_BOTTOM} />
-                    <text x={sx(model.collapseEvent.timeSec) + 5} y={MARGIN_TOP + 12} className='underfrequency-ftc-event-label'>COLLAPSE</text>
-                  </g>
-                )}
-                {model.steadyStateEvent && (
-                  <g className='underfrequency-ftc-steady' aria-label='Steady state tercapai'>
-                    <line x1={sx(model.steadyStateEvent.timeSec)} y1={MARGIN_TOP} x2={sx(model.steadyStateEvent.timeSec)} y2={H - MARGIN_BOTTOM} />
-                    <text x={sx(model.steadyStateEvent.timeSec) - 5} y={MARGIN_TOP + 12} textAnchor='end' className='underfrequency-ftc-event-label'>STEADY</text>
-                  </g>
-                )}
+                  {/* UFLS trip markers */}
+                  {model.tripMarkers.map((marker, index) => (
+                    <g key={`${marker.stageId}:${marker.timeSec}:${index}`} className='underfrequency-ftc-trip'>
+                      <line x1={sx(marker.timeSec)} y1={MARGIN_TOP} x2={sx(marker.timeSec)} y2={H - MARGIN_BOTTOM} />
+                      <circle cx={sx(marker.timeSec)} cy={sy(model.yAxis.max)} r='3' />
+                    </g>
+                  ))}
 
-                {/* Scrub crosshair */}
-                {scrubX !== null && (
-                  <g className='underfrequency-ftc-scrub-crosshair' aria-hidden='true'>
-                    <line x1={scrubX} y1={MARGIN_TOP} x2={scrubX} y2={H - MARGIN_BOTTOM} />
-                    <circle cx={scrubX} cy={visibleSnapshot ? sy(visibleSnapshot.frequencyHz) : MARGIN_TOP} r='4' />
-                  </g>
-                )}
-              </g>
+                  {/* Collapse / steady-state marker */}
+                  {model.collapseEvent && (
+                    <g className='underfrequency-ftc-collapse' aria-label='Kolaps frekuensi'>
+                      <line x1={sx(model.collapseEvent.timeSec)} y1={MARGIN_TOP} x2={sx(model.collapseEvent.timeSec)} y2={H - MARGIN_BOTTOM} />
+                      <text x={sx(model.collapseEvent.timeSec) + 5} y={MARGIN_TOP + 12} className='underfrequency-ftc-event-label'>COLLAPSE</text>
+                    </g>
+                  )}
+                  {model.steadyStateEvent && (
+                    <g className='underfrequency-ftc-steady' aria-label='Steady state tercapai'>
+                      <line x1={sx(model.steadyStateEvent.timeSec)} y1={MARGIN_TOP} x2={sx(model.steadyStateEvent.timeSec)} y2={H - MARGIN_BOTTOM} />
+                      <text x={sx(model.steadyStateEvent.timeSec) - 5} y={MARGIN_TOP + 12} textAnchor='end' className='underfrequency-ftc-event-label'>STEADY</text>
+                    </g>
+                  )}
 
-              <line className='underfrequency-ftc-axis' x1={MARGIN_LEFT} y1={MARGIN_TOP} x2={MARGIN_LEFT} y2={H - MARGIN_BOTTOM} />
-              <line className='underfrequency-ftc-axis' x1={MARGIN_LEFT} y1={H - MARGIN_BOTTOM} x2={W - MARGIN_RIGHT} y2={H - MARGIN_BOTTOM} />
-              <text className='underfrequency-ftc-axis-label' x={MARGIN_LEFT + PLOT_WIDTH / 2} y={H - 8} textAnchor='middle'>
-                Engineering Time (s)
-              </text>
-              <text className='underfrequency-ftc-axis-label' x='16' y={MARGIN_TOP + PLOT_HEIGHT / 2} textAnchor='middle' transform={`rotate(-90 16 ${MARGIN_TOP + PLOT_HEIGHT / 2})`}>
-                Frequency (Hz)
-              </text>
-            </svg>
+                  {/* Scrub crosshair */}
+                  {scrubX !== null && (
+                    <g className='underfrequency-ftc-scrub-crosshair' aria-hidden='true'>
+                      <line x1={scrubX} y1={MARGIN_TOP} x2={scrubX} y2={H - MARGIN_BOTTOM} />
+                      <circle cx={scrubX} cy={visibleSnapshot ? sy(visibleSnapshot.frequencyHz) : MARGIN_TOP} r='4' />
+                    </g>
+                  )}
+                </g>
+
+                <line className='underfrequency-ftc-axis' x1={MARGIN_LEFT} y1={MARGIN_TOP} x2={MARGIN_LEFT} y2={H - MARGIN_BOTTOM} />
+                <line className='underfrequency-ftc-axis' x1={MARGIN_LEFT} y1={H - MARGIN_BOTTOM} x2={W - MARGIN_RIGHT} y2={H - MARGIN_BOTTOM} />
+                <text className='underfrequency-ftc-axis-label' x={MARGIN_LEFT + PLOT_WIDTH / 2} y={H - 8} textAnchor='middle'>
+                  Engineering Time (s)
+                </text>
+                <text className='underfrequency-ftc-axis-label' x='16' y={MARGIN_TOP + PLOT_HEIGHT / 2} textAnchor='middle' transform={`rotate(-90 16 ${MARGIN_TOP + PLOT_HEIGHT / 2})`}>
+                  Frequency (Hz)
+                </text>
+              </svg>
+            </OverlayScrollArea>
           </div>
         </>
       )}

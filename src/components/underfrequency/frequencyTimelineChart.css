@@ -236,10 +236,18 @@
 .underfrequency-ftc-legend i[data-kind='stage'] { background: var(--sim-amber); }
 .underfrequency-ftc-legend i[data-kind='trip'] { background: var(--sim-red); }
 
-.underfrequency-ftc-svg {
+.underfrequency-ftc-scroll {
+  min-height: 360px;
+  aspect-ratio: 940 / 440;
+}
+
+.underfrequency-ftc-scroll svg {
   display: block;
   width: 100%;
+  min-width: 660px;
   height: auto;
+  min-height: 360px;
+  user-select: none;
 }
 
 .underfrequency-ftc-grid {
@@ -249,7 +257,9 @@
 
 .underfrequency-ftc-tick {
   fill: var(--sim-text-muted);
-  font-size: 10px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .01em;
 }
 
 .underfrequency-ftc-axis {
@@ -260,6 +270,7 @@
 .underfrequency-ftc-axis-label {
   fill: var(--sim-text-secondary);
   font-size: 11px;
+  font-weight: 700;
 }
 
 .underfrequency-ftc-plot-bg {
@@ -324,13 +335,16 @@
 
 .underfrequency-ftc-event-label {
   fill: var(--sim-red);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: .05em;
+  paint-order: stroke;
+  stroke: var(--sim-bg);
+  stroke-width: 3px;
 }
 
 .underfrequency-ftc-steady .underfrequency-ftc-event-label {
-  fill: var(--sim-text-muted);
+  fill: var(--sim-text-secondary);
 }
 
 .underfrequency-ftc-scrub-crosshair {
