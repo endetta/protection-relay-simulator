@@ -59,7 +59,7 @@
 
 .underfrequency-gen-diagram-message b {
   color: var(--sim-amber);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .06em;
 }
 
@@ -106,7 +106,7 @@
   border: 1px solid var(--sim-border);
   border-radius: 3px;
   padding: 1px 6px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .06em;
 }
@@ -139,7 +139,7 @@
 .underfrequency-gen-row-stat > span {
   overflow: hidden;
   color: var(--sim-text-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .05em;
   text-overflow: ellipsis;
@@ -166,7 +166,7 @@
 .underfrequency-gen-row-stat > small {
   overflow: hidden;
   color: var(--sim-text-dim);
-  font-size: 11px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

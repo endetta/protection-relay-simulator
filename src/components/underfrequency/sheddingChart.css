@@ -59,7 +59,7 @@
 
 .underfrequency-shedding-message b {
   color: var(--sim-amber);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .06em;
 }
 
@@ -144,12 +144,12 @@
 
 .underfrequency-shedding-stage-rail span {
   color: var(--sim-text-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .underfrequency-shedding-stage-rail b {
   color: var(--sim-text-secondary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: .05em;
 }
