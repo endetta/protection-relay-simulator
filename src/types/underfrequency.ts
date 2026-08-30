@@ -36,11 +36,6 @@ export type UnderfrequencySteadyStateStatus =
 /** U01 § 11.2 — evaluation display status. */
 export type UnderfrequencyDisplayStatus = 'OPERATE' | 'RESTRAIN' | 'INVALID';
 
-/** U01 § 6.1 — per-generator role in a disturbance step. */
-export type UnderfrequencySteadyStateResultStatus =
-  | 'DEFICIT_EXCEEDS_AVAILABLE_GENERATION'
-  | 'SETTLED';
-
 /** U01 § 11 — the net-deficit solving status. */
 export type UnderfrequencySolveStatus =
   | 'SETTLED'
@@ -192,6 +187,8 @@ export interface UnderfrequencyGovernorResult {
   readonly actualOutputMw: number;
   readonly headroomMw: number;
   readonly saturated: boolean;
+  /** The deviation at which this unit just reaches its headroom (Hz). */
+  readonly saturatingDeltaHz: number;
 }
 
 export interface UnderfrequencyUflsStageResult {
@@ -212,7 +209,7 @@ export interface UnderfrequencyStaticResult {
   readonly initialDeficitMw: number;
   /** Closed-form steady-state frequency (Hz); null on collapse. */
   readonly steadyStateHz: number | null;
-  readonly steadyStateStatus: UnderfrequencySteadyStateResultStatus;
+  readonly steadyStateStatus: UnderfrequencySteadyStateStatus;
   readonly solveStatus: UnderfrequencySolveStatus;
   readonly governorResults: readonly UnderfrequencyGovernorResult[];
   readonly uflsStageResults: readonly UnderfrequencyUflsStageResult[];

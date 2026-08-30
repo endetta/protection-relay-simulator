@@ -1,0 +1,556 @@
+/**
+ * Underfrequency engine (U01 § 5-8, per underfrequency-relay.md).
+ *
+ * Pure, deterministic calculation. No React, no DOM, no SVG. Reuses the
+ * scale-aware `nearlyEqual` tolerance from overcurrent.ts (O02 invariant).
+ *
+ * The math is distilled from a single-area coherent swing equation with
+ * per-generator algebraic governor/droop response and staged UFLS:
+ *
+ *   H_sys     = Σ(H_i·MVA_i) / Σ(MVA_i)                 [inertia-weighted]
+ *   resp_i    = clamp(-Δf/f_nom · MVA_i/R_i, 0, headroom_i)
+ *   β_pu      = Σ_unsaturated (MVA_i/R_i)
+ *   Δf_ss     = -f_nom · D / β_pu                        [unsaturated]
+ *
+ * All functions are non-throwing on the numeric boundary: bad inputs yield
+ * an explicit `INVALID` / collapse status, never a thrown exception.
+ */
+
+import type {
+  DomainEvaluation,
+  DomainIssue,
+  UnderfrequencyDomainIssueCode,
+  UnderfrequencyGeneratorData,
+  UnderfrequencyGovernorResult,
+  UnderfrequencySolveStatus,
+  UnderfrequencyStaticResult,
+  UnderfrequencySteadyStateStatus,
+  UnderfrequencySystemData,
+  UnderfrequencyUflsStageResult,
+  UflsStageSettings,
+} from '../types/underfrequency';
+import { nearlyEqual } from './overcurrent';
+
+// ─────────────────────────────── Issue helpers ─────────────────────────────
+
+function issue(
+  code: UnderfrequencyDomainIssueCode,
+  path: string,
+  detail: string,
+): DomainIssue {
+  return { code, path, detail };
+}
+
+function invalid(issues: readonly DomainIssue[]): DomainEvaluation<never> {
+  return { status: 'INVALID', issues };
+}
+
+/** Map the solve status onto the binary steady-state classifier (U01 § 11.1). */
+function solveStatusToSteadyStateStatus(
+  status: UnderfrequencySolveStatus,
+): UnderfrequencySteadyStateStatus {
+  return status === 'SETTLED' ? 'SETTLED' : 'COLLAPSE';
+}
+
+function isFinitePositive(value: number): boolean {
+  return Number.isFinite(value) && value > 0;
+}
+
+// ─────────────────────────────── Aggregates ────────────────────────────────
+// U01 § 5.2.
+
+/** Sum of online generator MVA — the study base. */
+export function aggregateBaseMva(
+  generators: readonly UnderfrequencyGeneratorData[],
+): number {
+  return generators.reduce((sum, g) => sum + g.mva, 0);
+}
+
+/**
+ * Inertia-weighted mean H over the online set.
+ * `H_sys = Σ(H_i·MVA_i) / Σ(MVA_i)`.
+ */
+export function aggregateInertia(
+  generators: readonly UnderfrequencyGeneratorData[],
+  sBaseMva: number,
+): number {
+  const numer = generators.reduce((sum, g) => sum + g.inertiaSec * g.mva, 0);
+  if (!isFinitePositive(sBaseMva)) return Number.NaN;
+  return numer / sBaseMva;
+}
+
+// ─────────────────────────────── Governor math ─────────────────────────────
+// U01 § 7.
+
+/** Governance headroom for a unit: `governorMaxMw - initialMw`. */
+export function governorHeadroomMw(generator: UnderfrequencyGeneratorData): number {
+  return generator.governorMaxMw - generator.initialMw;
+}
+
+/**
+ * Droop response at frequency deviation `dfHz` (MW), unsaturated then clamped
+ * to [0, headroom]. Because dfHz < 0 for underfrequency, the response is ≥ 0.
+ * @param fNominalHz — required to scale the per-unit droop (U01 § 7.1).
+ */
+export function clampGovernorMw(
+  generator: UnderfrequencyGeneratorData,
+  dfHz: number,
+  fNominalHz: number,
+): number {
+  const headroom = governorHeadroomMw(generator);
+  const response = (-dfHz / fNominalHz) * (generator.mva / generator.droopPu);
+  return Math.min(headroom, Math.max(0, response));
+}
+
+/** Per-unit droop response basis (MW) before clamping, with f_nom applied. */
+export function perUnitDroopMw(
+  generator: UnderfrequencyGeneratorData,
+  dfHz: number,
+  fNominalHz: number,
+): number {
+  if (!isFinitePositive(fNominalHz)) return 0;
+  return (-dfHz / fNominalHz) * (generator.mva / generator.droopPu);
+}
+
+/**
+ * Saturation deviation for a unit — the df (Hz) at which it just hits
+ * headroom. `Δf_i,sat = -f_nom·headroom_i·R_i / MVA_i`.
+ */
+export function perUnitSaturationDeviationHz(
+  generator: UnderfrequencyGeneratorData,
+  fNominalHz: number,
+): number {
+  const headroom = governorHeadroomMw(generator);
+  if (!isFinitePositive(fNominalHz) || generator.mva <= 0 || generator.droopPu <= 0) {
+    return Number.NaN;
+  }
+  return (-fNominalHz * headroom * generator.droopPu) / generator.mva;
+}
+
+/**
+ * System stiffness of the unsaturated set.
+ * `β_pu = Σ_unsaturated (MVA_i/R_i)`.
+ */
+export function systemStiffnessBetaPu(
+  generators: readonly UnderfrequencyGeneratorData[],
+  dfHz: number,
+  fNominalHz: number,
+): number {
+  let beta = 0;
+  for (const g of generators) {
+    const satDelta = perUnitSaturationDeviationHz(g, fNominalHz);
+    if (!Number.isFinite(satDelta)) continue;
+    // A unit is saturated once df is beyond (more negative than) its sat delta.
+    if (dfHz <= satDelta) continue;
+    beta += g.mva / g.droopPu;
+  }
+  return beta;
+}
+
+// ─────────────────────────────── Static reference ──────────────────────────
+// Aggregates the closed-form steady-state for a given (already-resolved)
+// online set, deficit, and UFLS stage list. This is the reference the
+// timeline parity test compares against.
+
+interface StaticInput {
+  readonly generators: readonly UnderfrequencyGeneratorData[];
+  readonly fNominalHz: number;
+  readonly deficitMw: number;
+  readonly uflsStages: readonly UflsStageSettings[];
+  readonly baseLoadMw: number;
+}
+
+/** Result of the closed-form UFLS resolution — the residual steady state. */
+interface ResolvedDeficit {
+  readonly generators: readonly UnderfrequencyGeneratorData[];
+  readonly fNominalHz: number;
+  readonly deficitMw: number;
+  readonly uflsStages: readonly UflsStageSettings[];
+  readonly baseLoadMw: number;
+  /** The frequency after the residual deficit is solved (null on collapse). */
+  readonly finalFrequencyHz: number | null;
+  /** Stage ids that shed during resolution. */
+  readonly operatedStageIds: readonly string[];
+  readonly totalShedMw: number;
+}
+
+/**
+ * Solve the closed-loop steady-state frequency for a constant deficit.
+ * Monotone piecewise-linear inversion with saturation; returns a status,
+ * never a throw. Collapse is signalled by `solveStatus = COLLAPSE`.
+ */
+export function solveSteadyStateDeficit(input: StaticInput): {
+  readonly steadyStateHz: number | null;
+  readonly betaPu: number;
+  readonly solveStatus: UnderfrequencySolveStatus;
+  readonly governorResults: readonly UnderfrequencyGovernorResult[];
+} {
+  const { generators, fNominalHz, deficitMw } = input;
+  if (!isFinitePositive(fNominalHz) || !Number.isFinite(deficitMw)) {
+    return { steadyStateHz: null, betaPu: 0, solveStatus: 'COLLAPSE', governorResults: [] };
+  }
+
+  // Saturation-ordered walk: units with the smallest |sat delta| saturate first.
+  const ordered = [...generators].sort(
+    (a, b) =>
+      Math.abs(perUnitSaturationDeviationHz(a, fNominalHz)) -
+      Math.abs(perUnitSaturationDeviationHz(b, fNominalHz)),
+  );
+
+  // Monotone piecewise-linear inversion with saturation. On each step:
+  //   Δf_ss = -f_nom · (D - Σ_sat headroom) / β_unsat
+  // Saturated units deliver their full headroom (fixed), so only the residual
+  // deficit is left for the unsaturated droop slope. If Δf_ss would push the
+  // next (least-saturated) unit past its limit, saturate it and repeat.
+  let beta = 0;
+  for (const g of generators) beta += g.mva / g.droopPu;
+  let saturatedMaxMw = 0;
+  const remaining = [...ordered];
+  const governorResults: UnderfrequencyGovernorResult[] = [];
+
+  for (let iter = 0; iter < generators.length + 1; iter += 1) {
+    if (beta <= 1e-9 || remaining.length === 0) {
+      // Either the slope degenerated or every unit is saturated — the deficit
+      // can no longer be covered by governor response. This is a collapse.
+      return {
+        steadyStateHz: null,
+        betaPu: 0,
+        solveStatus: 'COLLAPSE',
+        governorResults,
+      };
+    }
+    const residual = deficitMw - saturatedMaxMw;
+    const df = (-fNominalHz * residual) / beta; // Δf_ss = -f_nom·D_residual/β_unsat
+    // The unit that saturates next is the one with the smallest |sat delta|
+    // not already saturated (saturated units are no longer in `remaining`).
+    const next = remaining[0];
+    if (next) {
+      const satDelta = perUnitSaturationDeviationHz(next, fNominalHz);
+      if (df <= satDelta) {
+        // This unit would exceed its limit → saturate it & take it off the slope.
+        const headroom = governorHeadroomMw(next);
+        beta -= next.mva / next.droopPu;
+        remaining.shift();
+        saturatedMaxMw += headroom;
+        governorResults.push({
+          generatorId: next.id,
+          saturated: true,
+          saturatingDeltaHz: satDelta,
+          headroomMw: headroom,
+          droopResponseMw: headroom,
+          actualOutputMw: next.initialMw + headroom,
+        });
+        continue;
+      }
+    }
+    // Fixed point found on the unsaturated slope.
+    for (const g of remaining) {
+      governorResults.push({
+        generatorId: g.id,
+        saturated: false,
+        saturatingDeltaHz: perUnitSaturationDeviationHz(g, fNominalHz),
+        headroomMw: governorHeadroomMw(g),
+        droopResponseMw: perUnitDroopMw(g, df, fNominalHz),
+        actualOutputMw: g.initialMw + perUnitDroopMw(g, df, fNominalHz),
+      });
+    }
+    return {
+      steadyStateHz: fNominalHz + df,
+      betaPu: beta,
+      solveStatus: 'SETTLED',
+      governorResults,
+    };
+  }
+
+  return { steadyStateHz: null, betaPu: 0, solveStatus: 'DEFICIT_EXCEEDS_AVAILABLE_GENERATION', governorResults };
+}
+
+// ─────────────────────── UFLS stage resolution (static) ────────────────────
+// U01 § 9. The static evaluator reports which stages would operate for the
+// final steady-state frequency; the timeline engine also applies the timer
+// dynamics. This is the closed-form reference for what the timeline settles to.
+
+export function evaluateUnderfrequencyUfr(
+  stages: readonly UflsStageSettings[],
+  frequencyHz: number,
+  baseLoadMw: number,
+): readonly UnderfrequencyUflsStageResult[] {
+  if (!Number.isFinite(baseLoadMw) || baseLoadMw <= 0) {
+    return stages.map((s) => ({
+      stageId: s.id,
+      thresholdHz: s.thresholdHz,
+      shedMw: 0,
+      operated: false,
+    }));
+  }
+  const results: UnderfrequencyUflsStageResult[] = [];
+  // A stage operates if frequency ended up at/below its threshold (strict below).
+  for (const stage of stages) {
+    if (!stage.enabled) {
+      results.push({ stageId: stage.id, thresholdHz: stage.thresholdHz, shedMw: 0, operated: false });
+      continue;
+    }
+    const shedMw = (stage.shedFractionPct / 100) * baseLoadMw;
+    const operated = frequencyHz < stage.thresholdHz && !nearlyEqual(frequencyHz, stage.thresholdHz);
+    results.push({ stageId: stage.id, thresholdHz: stage.thresholdHz, shedMw, operated });
+  }
+  return results;
+}
+
+// ─────────────────────────────── Validation ────────────────────────────────
+// U01 § 12.7 / § 9.5. Returns issues; non-throwing.
+
+export function validateUnderfrequencySystem(
+  system: UnderfrequencySystemData,
+): readonly DomainIssue[] {
+  const issues: DomainIssue[] = [];
+  if (!isFinitePositive(system.fNominalHz)) {
+    issues.push(issue('NON_POSITIVE_F_NOM', 'system.fNominalHz', 'Nominal frequency must be finite and > 0.'));
+  }
+  if (!Number.isFinite(system.voltageKv) || system.voltageKv <= 0) {
+    issues.push(issue('NUMERICAL_RANGE', 'system.voltageKv', 'Voltage must be finite and > 0.'));
+  }
+  if (!Number.isFinite(system.baseLoadMw) || system.baseLoadMw <= 0) {
+    issues.push(issue('NUMERICAL_RANGE', 'system.baseLoadMw', 'Base load must be finite and > 0.'));
+  }
+  return issues;
+}
+
+export function validateUnderfrequencyGenerators(
+  generators: readonly UnderfrequencyGeneratorData[],
+): readonly DomainIssue[] {
+  const issues: DomainIssue[] = [];
+  if (generators.length === 0) {
+    issues.push(issue('INVALID_TOPOLOGY', 'generators', 'At least one generator is required.'));
+    return issues;
+  }
+  for (const g of generators) {
+    if (!isFinitePositive(g.mva)) {
+      issues.push(issue('NON_POSITIVE_MVA', `generators.${g.id}.mva`, 'MVA rating must be finite and > 0.'));
+    }
+    if (!isFinitePositive(g.inertiaSec)) {
+      issues.push(issue('NON_POSITIVE_INERTIA', `generators.${g.id}.inertiaSec`, 'Inertia constant must be finite and > 0.'));
+    }
+    if (!isFinitePositive(g.droopPu)) {
+      issues.push(issue('NON_POSITIVE_DROOP', `generators.${g.id}.droopPu`, 'Droop must be finite and > 0.'));
+    }
+    if (!Number.isInteger(g.poles) || g.poles <= 0) {
+      issues.push(issue('INVALID_POLES', `generators.${g.id}.poles`, 'Pole count must be a positive integer.'));
+    }
+    if (g.governorMaxMw < g.initialMw) {
+      issues.push(issue('NON_POSITIVE_HEADROOM', `generators.${g.id}.governorMaxMw`, 'Governor max output must be >= initial output (non-negative headroom).'));
+    }
+    if (g.initialMw > g.mwRated) {
+      issues.push(issue('NUMERICAL_RANGE', `generators.${g.id}.initialMw`, 'Initial output cannot exceed rated MW.'));
+    }
+  }
+  return issues;
+}
+
+export function validateUnderfrequencyUflsStages(
+  stages: readonly UflsStageSettings[],
+): readonly DomainIssue[] {
+  const issues: DomainIssue[] = [];
+  // Stage ordering must be strictly descending threshold (applied with tolerance).
+  for (let i = 1; i < stages.length; i += 1) {
+    const prev = stages[i - 1];
+    const curr = stages[i];
+    if (curr.thresholdHz >= prev.thresholdHz && !nearlyEqual(curr.thresholdHz, prev.thresholdHz)) {
+      issues.push(issue('INVALID_UFLS_ORDER', `uflsStages.${curr.id}.thresholdHz`, 'UFLS stages must be ordered by strictly descending threshold.'));
+      break;
+    }
+    if (curr.shedFractionPct < 0 || curr.shedFractionPct > 100) {
+      issues.push(issue('NON_POSITIVE_SHED_FRACTION', `uflsStages.${curr.id}.shedFractionPct`, 'Shed fraction must be in [0, 100].'));
+      break;
+    }
+  }
+  for (const s of stages) {
+    if (!isFinitePositive(s.thresholdHz)) {
+      issues.push(issue('NUMERICAL_RANGE', `uflsStages.${s.id}.thresholdHz`, 'Threshold must be finite and > 0.'));
+    }
+    if (!Number.isFinite(s.timeDelaySec) || s.timeDelaySec < 0) {
+      issues.push(issue('NUMERICAL_RANGE', `uflsStages.${s.id}.timeDelaySec`, 'Delay must be finite and >= 0.'));
+    }
+  }
+  return issues;
+}
+
+// ──────────────────────────── Static evaluator ──────────────────────────────
+// U01 § 11. Evaluates the resolved online set & deficit against UFLS to
+// produce the closed-form reference static result.
+
+export interface UnderfrequencyStaticContext {
+  readonly system: UnderfrequencySystemData;
+  readonly generators: readonly UnderfrequencyGeneratorData[];
+  readonly uflsStages: readonly UflsStageSettings[];
+}
+
+export function evaluateUnderfrequencySystem(
+  context: UnderfrequencyStaticContext,
+): DomainEvaluation<UnderfrequencyStaticResult> {
+  const { system, generators, uflsStages } = context;
+  const allIssues = [
+    ...validateUnderfrequencySystem(system),
+    ...validateUnderfrequencyGenerators(generators),
+    ...validateUnderfrequencyUflsStages(uflsStages),
+  ];
+  if (allIssues.length > 0) {
+    return invalid(allIssues);
+  }
+
+  const sBaseMva = aggregateBaseMva(generators);
+  const hSysSec = aggregateInertia(generators, sBaseMva);
+  const fNominalHz = system.fNominalHz;
+  const initialDeficitMw = computeInitialDeficit(generators, system.baseLoadMw);
+  const initialRocofHzPerSec = computeRocof(initialDeficitMw, hSysSec, sBaseMva, fNominalHz);
+
+  // Static reference: the final state after all UFLS that would operate have
+  // shed. Since the static evaluator does not animate timers, we resolve the
+  // residual deficit by monotone fixed-point (shedding lowers deficit → raises
+  // frequency → may de-operate a stage), then solve the residual steady state.
+  // This is the closed-form target the timeline must converge to (U01 § 13.1).
+  const resolved = resolveStaticWithUfls(system, generators, uflsStages);
+  const solved = solveSteadyStateDeficit(resolved);
+
+  // UFLS results come from the resolved shed set (which may shed a stage that
+  // the final frequency is above — UFLS operates en-route, then frequency
+  // recovers). Report each stage with its final operated/latched state.
+  const operatedSet = new Set(resolved.operatedStageIds);
+  const uflsStageResults = uflsStages.map((s) => ({
+    stageId: s.id,
+    thresholdHz: s.thresholdHz,
+    shedMw: (s.shedFractionPct / 100) * system.baseLoadMw,
+    operated: operatedSet.has(s.id),
+  }));
+  const totalShedMw = resolved.totalShedMw;
+
+  const generatorStatus = Object.fromEntries(
+    generators.map((g) => [g.id, g.status]),
+  ) as Record<string, UnderfrequencyGeneratorData['status']>;
+
+  const result: UnderfrequencyStaticResult = {
+    sBaseMva,
+    hSysSec,
+    betaPu: solved.betaPu,
+    betaMwPerHz: solved.betaPu / fNominalHz,
+    initialRocofHzPerSec,
+    initialDeficitMw,
+    steadyStateHz: solved.steadyStateHz,
+    steadyStateStatus: solveStatusToSteadyStateStatus(solved.solveStatus),
+    solveStatus: solved.solveStatus,
+    governorResults: solved.governorResults,
+    uflsStageResults,
+    totalShedMw,
+    generatorStatus,
+    displayStatus:
+      totalShedMw > 0 ||
+      (resolved.finalFrequencyHz !== null && resolved.finalFrequencyHz < fNominalHz)
+        ? 'OPERATE'
+        : 'RESTRAIN',
+    issues: [],
+  };
+  return { status: 'VALID', value: result };
+}
+
+// ─────────────────────── Internal static resolution ────────────────────────
+// U01 § 9.5 — the closed-form UFLS resolution used only as a parity reference.
+// It sheds all stages that operate (strict below threshold) then solves the
+// residual deficit. This is the target the timeline must converge to.
+
+function resolveStaticWithUfls(
+  system: UnderfrequencySystemData,
+  generators: readonly UnderfrequencyGeneratorData[],
+  uflsStages: readonly UflsStageSettings[],
+): ResolvedDeficit {
+  // Monotone fixed-point: shed every stage whose threshold the current
+  // steady-state frequency falls strictly below (U01 § 9). Shedding lowers the
+  // deficit → raises frequency → may de-operate a lower stage. Converges in at
+  // most `stageCount + 1` steps.
+  let deficit = computeInitialDeficit(generators, system.baseLoadMw);
+  // Set of stage ids that have already shed (conservative fixed-point).
+  const shedSet = new Set<string>();
+  let finalFrequencyHz: number | null = null;
+  for (let iter = 0; iter < uflsStages.length + 2; iter += 1) {
+    const candidate = solveSteadyStateDeficit({
+      generators,
+      fNominalHz: system.fNominalHz,
+      deficitMw: deficit,
+      uflsStages,
+      baseLoadMw: system.baseLoadMw,
+    });
+    finalFrequencyHz = candidate.steadyStateHz;
+    // Collapse means the frequency fell below the entire ladder — so shed every
+    // not-yet-shed stage and re-solve. Only conclude true collapse once all
+    // stages have shed and the deficit still exceeds available generation.
+    const shed = uflsStages.reduce((sum, s) => {
+      if (!s.enabled) return sum;
+      const operated = finalFrequencyHz === null ||
+        (finalFrequencyHz < s.thresholdHz && !nearlyEqual(finalFrequencyHz, s.thresholdHz));
+      if (!operated || shedSet.has(s.id)) return sum;
+      shedSet.add(s.id);
+      return sum + (s.shedFractionPct / 100) * system.baseLoadMw;
+    }, 0);
+    const newDeficit = deficit - shed;
+    if (Math.abs(newDeficit - deficit) <= 1e-9) break;
+    deficit = newDeficit;
+  }
+  // After the loop, re-solve the residual deficit for a canonical steady state.
+  const candidate = solveSteadyStateDeficit({
+    generators,
+    fNominalHz: system.fNominalHz,
+    deficitMw: deficit,
+    uflsStages,
+    baseLoadMw: system.baseLoadMw,
+  });
+  const resolvedHz = candidate.steadyStateHz;
+  const totalShedMw = [...shedSet].reduce((sum, id) => {
+    const stage = uflsStages.find((s) => s.id === id);
+    return sum + (stage ? (stage.shedFractionPct / 100) * system.baseLoadMw : 0);
+  }, 0);
+  return {
+    generators,
+    fNominalHz: system.fNominalHz,
+    deficitMw: deficit,
+    uflsStages,
+    baseLoadMw: system.baseLoadMw,
+    finalFrequencyHz: resolvedHz,
+    operatedStageIds: [...shedSet],
+    totalShedMw,
+  };
+}
+
+// ─────────────────────────────── Helpers ───────────────────────────────────
+// U01 § 5.3 / § 6.2.
+
+/** Net pre-governor deficit: load − online generation. */
+export function computeInitialDeficit(
+  generators: readonly UnderfrequencyGeneratorData[],
+  baseLoadMw: number,
+): number {
+  const onlineMw = generators
+    .filter((g) => g.status !== 'TRIPPED')
+    .reduce((sum, g) => sum + g.initialMw, 0);
+  return baseLoadMw - onlineMw;
+}
+
+/** ROCOF at t=0: `-(f_nom/(2H_sys))·(D₀/S_base)`. */
+export function computeRocof(
+  deficitMw: number,
+  hSysSec: number,
+  sBaseMva: number,
+  fNominalHz: number,
+): number {
+  if (!isFinitePositive(hSysSec) || !isFinitePositive(sBaseMva) || !isFinitePositive(fNominalHz)) {
+    return Number.NaN;
+  }
+  return (-fNominalHz / (2 * hSysSec)) * (deficitMw / sBaseMva);
+}
+
+/** Per-generator droop share of a total response at a given df. */
+export function inertiaSharePct(
+  generator: UnderfrequencyGeneratorData,
+  sBaseMva: number,
+): number {
+  if (!isFinitePositive(sBaseMva)) return 0;
+  return (generator.mva / sBaseMva) * 100;
+}
