@@ -2,9 +2,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Browser engineering simulator for power-system protection relays: Differential (87, frozen), Overcurrent (50/51), Distance (in-progress), Underfrequency (planned). Stack is fixed: **Vite + React 18 + TypeScript (strict) + Tailwind CSS + Vitest**. No global state library and no chart library — all charts are inline SVG. Do not add either.
+Browser engineering simulator for power-system protection relays: Differential (87, frozen), Overcurrent (50/51), Distance (in-progress, parallel branch), Underfrequency (81U, complete). Stack is fixed: **Vite + React 18 + TypeScript (strict) + Tailwind CSS + Vitest**. No global state library and no chart library — all charts are inline SVG. Do not add either.
 
-The `AGENTS.md` quick-map, the `.github/copilot-instructions.md` audit workflows, and `memory-bank/activeContext.md` freeze state are authoritative and should be read before non-trivial work. This file captures the module architecture that spans files.
+The `AGENTS.md` quick-map, the `.github/copilot-instructions.md` audit workflows, and `memory-bank/activeContext.md` freeze state are authoritative and should be read before non-trivial work. Module specs live in `docs/engineering-specs/<relay>-relay.md`; Underfrequency is `underfrequency-relay.md` (U01). This file captures the module architecture that spans files.
 
 ## Commands
 
@@ -39,6 +39,12 @@ Key semantic invariants that must hold in every change:
 - **Decision inequalities matter.** `M <= 1` (or `nearlyEqual(M, 1)`) is no-pickup; pickup requires strict `>`; `Observed CTI >= Required CTI` passes. The `nearlyEqual` helper (`src/engines/overcurrent.ts`) is the standard tolerance — reuse it, don't re-derive comparisons.
 - **50-priority arbitration**: an enabled 50 high-set operates ahead of 51 timing.
 - **Frozen modules cannot be touched.** Differential R10 is FINAL/FROZEN — do not modify its source or tests without explicit user approval.
+
+### Underfrequency (81U) specifics
+
+The Underfrequency page mirrors Overcurrent's single-reducer composition, but the **state is small** — `UnderfrequencySimulatorState` is just `presetId, study, modified, playbackState, simulationSpeed, scrubTimeSec`. The timeline is memoised from `study` (`computeUnderfrequencyTimeline`), never stored in the reducer.
+
+Non-obvious trap: the **static evaluator has no disturbance-step mechanism** (U01 § 13). `evaluateUnderfrequencySystem()` treats the input as balanced — a study carrying `disturbanceSteps` yields a *balanced* reference, so shed MW / OPERATE / initial deficit must be read from the **run** (`run.events` UFLS_TRIP + first post-disturbance snapshot), with the static result only as the fallback + parity anchor. Underfrequency physics: swing-equation integral, per-generator droop, UFLS strict pickup latch (`f < threshold && !nearlyEqual`).
 
 ## Process guardrails
 
