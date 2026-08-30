@@ -26,6 +26,24 @@ describe('UFR presentation — f(t) timeline chart model', () => {
     expect(model.yAxis.max).toBeGreaterThanOrEqual(model.nominalFrequencyHz);
   });
 
+  it('clamps the y-domain to a readable physics band on a runaway footprint', () => {
+    // A 1e9 MW load step drives the curve to ~-4.6e6 Hz. The axis must clamp to
+    // a few Hz around nominal so the on-band curve stays legible instead of the
+    // domain ballooning and crushing it into a spike (regression: LOW defect).
+    const study = {
+      ...UFR_02_LOSE_LARGE_UNIT.study,
+      disturbanceSteps: [{ id: 'D', kind: 'LOAD_STEP', timeSec: 0, mw: 1e9 }] as const,
+    };
+    const run = computeUnderfrequencyTimeline(study);
+    const model = buildUnderfrequencyTimelineChartModel(run, study.uflsStages, study.system.fNominalHz);
+    const nominal = model.nominalFrequencyHz;
+    // The domain collapses to a narrow band around nominal, not the full
+    // -4.6e6..50 span of the curve; the nominal line is still inside it.
+    expect(model.yAxis.max - model.yAxis.min).toBeLessThan(25);
+    expect(model.yAxis.min).toBeLessThanOrEqual(nominal);
+    expect(model.yAxis.max).toBeGreaterThanOrEqual(nominal);
+  });
+
   it('exposes stage lines for every enabled UFLS stage and marks the operated latch', () => {
     const study = UFR_02_LOSE_LARGE_UNIT.study;
     const run = computeUnderfrequencyTimeline(study);

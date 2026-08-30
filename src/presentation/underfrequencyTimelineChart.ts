@@ -99,6 +99,34 @@ function paddedBounds(min: number, max: number, padFraction = 0.08): { min: numb
   return { min: min - span * padFraction, max: max + span * padFraction };
 }
 
+// A genuine frequency curve lives a few Hz around nominal; anything beyond this
+// band is a collapse/runaway. The y-domain is clamped to the band so an absurd
+// footprint (e.g. a 1e6 MW load step) cannot balloon the axis to gigabytes and
+// crush the curve into a spike — the off-scale portion is simply not shown.
+// Engineered presets (troughs ~45–48 Hz) stay fully inside the band.
+const FREQ_BAND_BELOW_NOMINAL_HZ = 15;
+const FREQ_BAND_ABOVE_NOMINAL_HZ = 5;
+
+/**
+ * Clamp the frequency domain to a readable physics band around nominal. Returns
+ * the raw min/max when they already fit, otherwise the band edges. Non-finite
+ * inputs collapse to the band (they only come from a runaway, never from a
+ * well-formed preset).
+ */
+function clampedFrequencyDomain(
+  min: number,
+  max: number,
+  fNominalHz: number,
+): { min: number; max: number } {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) {
+    return { min: fNominalHz - FREQ_BAND_BELOW_NOMINAL_HZ, max: fNominalHz + FREQ_BAND_ABOVE_NOMINAL_HZ };
+  }
+  return {
+    min: Math.max(min, fNominalHz - FREQ_BAND_BELOW_NOMINAL_HZ),
+    max: Math.min(max, fNominalHz + FREQ_BAND_ABOVE_NOMINAL_HZ),
+  };
+}
+
 function eventOfType(run: UnderfrequencyTimelineRun, types: string[]): UnderfrequencyTimelineEvent | null {
   return run.events.find((e) => types.includes(e.type)) ?? null;
 }
@@ -147,7 +175,10 @@ export function buildUnderfrequencyTimelineChartModel(
   const allY = [...yValues, nominalFrequencyHz, ...stageFrequencies];
   const yMinData = allY.length > 0 ? Math.min(...allY) : 45;
   const yMaxData = allY.length > 0 ? Math.max(...allY) : 51;
-  const yBounds = paddedBounds(yMinData, yMaxData);
+  // Clamp to the physics band first so a runaway/absurd footprint cannot crush
+  // the curve, then pad the (possibly trimmed) band for breathing room.
+  const yDomain = clampedFrequencyDomain(yMinData, yMaxData, nominalFrequencyHz);
+  const yBounds = paddedBounds(yDomain.min, yDomain.max);
 
   const xMinData = snapshots.length > 0 ? snapshots[0].engineeringTimeSec : 0;
   const xMaxData = snapshots.length > 0 ? snapshots[snapshots.length - 1].engineeringTimeSec : 1;
