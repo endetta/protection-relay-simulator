@@ -48,3 +48,15 @@ Key semantic invariants that must hold in every change:
 - **New dependencies are rejected** unless justified and audited against the existing stack.
 - For Overcurrent work, read `memory-bank/progress.md` + `activeContext.md` first to see the O01–O16 implementation baseline before changing anything.
 - After ANY UI/UX change, the producing agent MUST run `.agents/skills/ui-adversarial-test/SKILL.md` against its own revision before declaring PASS (`/test-ui`). It is a hostile bug-hunt harness, not a self-review; unresolvable → verdict `BLOCKED`, never `PASS`.
+
+## Git workflow (mandatory)
+
+This repository uses Git + GitHub as the source of truth. There is always a saved, revertible copy on `origin/main`.
+
+- **Commit as you work.** After completing any unit of work, `git add` the relevant files and `git commit` with a **clean, conventional message** (short imperative subject + concise body; end with `Co-Authored-By: Claude Code <noreply@anthropic.com>`). Commit in logical steps, not one giant final commit.
+- **Push each commit to GitHub.** After committing, run `git push` so the state is always saved remotely and recoverable. Do not leave work only on the local machine.
+- **Never lose work or status.** Keeping commits + pushes current means we can always revert to a known-good point. If a change turns out wrong, revert via git rather than manually un-doing it.
+- **One logical change per commit.** Co-locate related edits; separate cleanups (e.g. gitignore, config) from feature work.
+- **No secrets.** Never commit keys, tokens, or credentials.
+
+Local settings that must stay out of the repo (already gitignored): `.claude/settings.local.json` is machine-local and auto-modified per session — never stage it.
