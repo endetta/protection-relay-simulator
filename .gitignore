@@ -2,3 +2,6 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# Machine-local Claude Code permissions/settings (auto-modified per session)
+.claude/settings.local.json
