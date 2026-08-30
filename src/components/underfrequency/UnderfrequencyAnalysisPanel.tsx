@@ -15,7 +15,7 @@ import './underfrequencyAnalysisPanel.css';
 
 export interface UnderfrequencyAnalysisPanelProps {
   readonly state: UnderfrequencySimulatorState;
-  readonly staticResult: UnderfrequencyStaticResult;
+  readonly staticResult: UnderfrequencyStaticResult | null;
   readonly run: UnderfrequencyTimelineRun | null;
   readonly inputDraftValid?: boolean;
   readonly className?: string;

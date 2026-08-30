@@ -67,6 +67,36 @@ export interface UnderfrequencyAnalysisModel {
   readonly issues: readonly DomainIssue[];
 }
 
+/**
+ * Build the INVALID analysis model — used when no static reference exists
+ * (invalid parameter state). The study label/description and PLN note are
+ * still surfaced so the learner can see what they are editing.
+ */
+function invalidModel(run: UnderfrequencyTimelineRun | null, study: UnderfrequencySimulatorState['study']): UnderfrequencyAnalysisModel {
+  return {
+    status: 'INVALID',
+    headline: {
+      label: 'INPUT INVALID',
+      detail: 'Correct the invalid engineering parameter draft before the analysis can be evaluated.',
+      tone: 'warning',
+    },
+    studyLabel: study.label,
+    studyDescription: study.description,
+    summaryTiles: [],
+    checks: [],
+    phases: [],
+    calculationDetails: [],
+    events: run?.events ?? [],
+    minFrequencyHz: null,
+    finalFrequencyHz: null,
+    steadyStateStatus: null,
+    displayStatus: 'INVALID',
+    plnVerificationRequired: study.notes?.plnVerificationRequired ?? false,
+    sourceNote: study.notes?.sourceNote ?? null,
+    issues: run?.issues ?? [],
+  };
+}
+
 function numberText(value: number | null | undefined, digits = 3): string {
   if (value === null || value === undefined || !Number.isFinite(value)) return '—';
   const precision = Math.max(1, Math.min(21, Math.floor(digits)));
@@ -91,9 +121,12 @@ function steadyStateTone(status: 'SETTLED' | 'COLLAPSE'): UnderfrequencyTone {
  */
 export function buildUnderfrequencyAnalysisModel(
   state: UnderfrequencySimulatorState,
-  staticResult: UnderfrequencyStaticResult,
+  staticResult: UnderfrequencyStaticResult | null,
   run: UnderfrequencyTimelineRun | null,
 ): UnderfrequencyAnalysisModel {
+  if (staticResult === null) {
+    return invalidModel(run, state.study);
+  }
   const collapse = run ? run.steadyStateStatus === 'COLLAPSE' : staticResult.steadyStateStatus === 'COLLAPSE';
   const finalFrequency = run ? run.finalFrequencyHz : staticResult.steadyStateHz;
 

@@ -1,0 +1,115 @@
+.underfrequency-simulator-page {
+  isolation: isolate;
+}
+
+.underfrequency-live-stack {
+  display: grid;
+  min-width: 0;
+  gap: 10px;
+}
+
+.underfrequency-live-stack > .underfrequency-ftc {
+  min-height: 0;
+}
+
+/* Per-generator diagram + UFLS ladder sit side by side under the hero chart. */
+.underfrequency-live-cards {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.underfrequency-live-cards > .underfrequency-gen-diagram,
+.underfrequency-live-cards > .underfrequency-shedding {
+  min-width: 0;
+}
+
+.underfrequency-page-invalid {
+  display: grid;
+  gap: 3px;
+  border: 1px solid var(--sim-amber);
+  border-left: 3px solid var(--sim-amber);
+  border-radius: 5px;
+  background: var(--sim-panel-raised);
+  padding: 8px 10px;
+  color: var(--sim-text-secondary);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.underfrequency-page-invalid b {
+  color: var(--sim-amber);
+  font-size: 8.5px;
+  letter-spacing: .055em;
+}
+
+/* Rebalance the Live column to be the dominant visual (target ~52% on
+   desktop) without touching the shared column grid used by other modules. */
+@media (min-width: 1180px) {
+  .underfrequency-simulator-page .simulator-layout {
+    grid-template-columns: minmax(0, 22fr) minmax(0, 52fr) minmax(0, 26fr);
+  }
+  .underfrequency-simulator-page .simulator-column-live {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .underfrequency-live-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 520px) {
+  .underfrequency-live-stack { gap: 8px; }
+  .underfrequency-live-cards { gap: 8px; }
+}
+
+/* Reference help overlay (reuses the focus-safe EngineeringViewOverlay). */
+.underfrequency-help-overlay {
+  width: min(980px, 94vw);
+  height: min(760px, 90vh);
+}
+
+.underfrequency-help-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.underfrequency-help-grid section {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 4px;
+  background: var(--sim-panel-raised);
+  padding: 9px 10px;
+}
+
+.underfrequency-help-grid h3 {
+  margin: 0 0 5px;
+  color: var(--sim-accent);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .065em;
+  text-transform: uppercase;
+}
+
+.underfrequency-help-grid p {
+  margin: 0;
+  color: var(--sim-text-secondary);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.underfrequency-help-grid b { color: var(--sim-text); }
+.underfrequency-help-limit { grid-column: 1 / -1; }
+
+@media (max-width: 680px) {
+  .underfrequency-help-overlay {
+    width: calc(100vw - 12px);
+    height: calc(100dvh - 12px);
+  }
+  .underfrequency-help-grid { grid-template-columns: minmax(0, 1fr); }
+  .underfrequency-help-limit { grid-column: auto; }
+}
