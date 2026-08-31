@@ -97,6 +97,37 @@ describe('UFR presentation — f(t) timeline chart model', () => {
     const snap = snapshotAtTime(run.snapshots, null);
     expect(snap).toBe(run.snapshots[run.snapshots.length - 1]);
   });
+
+  it('clamps the x-axis lower bound to t=0 (engineering time is non-negative)', () => {
+    // Bug 3: paddedBounds applied its 8% pad to the time axis too, putting t=0
+    // ~7% in from the left edge behind a physically meaningless −0.4 s gutter.
+    // Engineering time never starts below zero, so the axis must not extend
+    // into negative time.
+    const study = UFR_02_LOSE_LARGE_UNIT.study;
+    const run = computeUnderfrequencyTimeline(study);
+    const model = buildUnderfrequencyTimelineChartModel(run, study.uflsStages, study.system.fNominalHz);
+    expect(model.xAxis.min).toBe(0);
+    expect(model.xAxis.max).toBeGreaterThan(0);
+  });
+
+  it('shows a full-width nominal baseline for the no-disturbance preset (Bug 3)', () => {
+    // UFR-01 is a balanced island: the entire simulated window is a flat 50 Hz
+    // line. MIN_SIM_WINDOW_SEC already guarantees a 5 s window in the engine;
+    // here we assert the chart presents it as a full-width baseline whose
+    // first point is t=0 and whose frequency never leaves nominal.
+    const study = UFR_01_NOMINAL.study;
+    const run = computeUnderfrequencyTimeline(study);
+    expect(run.status).toBe('VALID');
+    expect(run.finalTimeSec).toBeGreaterThanOrEqual(5);
+    const model = buildUnderfrequencyTimelineChartModel(run, study.uflsStages, study.system.fNominalHz);
+    expect(model.curve[0]?.x).toBe(0);
+    expect(model.curve[0]?.y).toBeCloseTo(study.system.fNominalHz, 6);
+    const lastPoint = model.curve[model.curve.length - 1];
+    expect(lastPoint?.y).toBeCloseTo(study.system.fNominalHz, 6);
+    // Baseline spans essentially the whole x-window (right edge is the pad).
+    const span = (lastPoint.x - model.curve[0].x) / (model.xAxis.max - model.xAxis.min);
+    expect(span).toBeGreaterThan(0.85);
+  });
 });
 
 describe('UFR presentation — generator diagram model', () => {
