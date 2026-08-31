@@ -210,7 +210,7 @@ export function underfrequencyReducer(state: UnderfrequencySimulatorState, actio
       return { ...state, scrubTimeSec: action.timeSec };
     }
     case 'BEGIN_RUN': {
-      return { ...state, playbackState: 'RUNNING' };
+      return { ...state, playbackState: 'RUNNING', scrubTimeSec: null };
     }
     case 'SET_PLAYBACK_STATE': {
       return { ...state, playbackState: action.playbackState };

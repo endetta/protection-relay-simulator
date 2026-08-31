@@ -72,4 +72,12 @@ describe('UFR Underfrequency parameter state', () => {
     expect(after.scrubTimeSec).toBeNull();
     expect(after.modified).toBe(true);
   });
+
+  it('resets scrubTimeSec on BEGIN_RUN (no resume from a stray scrub position)', () => {
+    const state = createInitialUnderfrequencyState();
+    const withTime = reduce(state, { type: 'SET_SCRUB_TIME', timeSec: 7 });
+    const after = reduce(withTime, { type: 'BEGIN_RUN' });
+    expect(after.scrubTimeSec).toBeNull();
+    expect(after.playbackState).toBe('RUNNING');
+  });
 });
