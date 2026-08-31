@@ -417,3 +417,52 @@ describe('Underfrequency timeline GENERATOR_BLOCK semantics (U01 §6.1, UFR-FIX-
     expect(lossG1!.status).toBe('TRIPPED');
   });
 });
+
+// ─────────── UFR-FIX-05: Spurious COLLAPSE on dResidualMw === 0 ─────────────────
+// A collapsing segment (betaUnsat ≤ EPS or hSysSec ≤ 0) whose residual deficit is
+// exactly 0 and whose runaway ROCOF is therefore 0 is a degenerate equilibrium —
+// no governor slope, no residual power. The frequency flat-lines at the saturated
+// value, which is a legitimate SETTLED tail, not a collapse. Before the fix the
+// only gate was dResidualMw > EPS, which is false for zero residual, so the
+// recovery branch emitted flat snapshots until the iter cap then fired a spurious
+// COLLAPSE event. (UFR-FIX-05)
+describe('Underfrequency timeline spurious collapse on zero residual (UFR-FIX-05)', () => {
+  it('does not emit COLLAPSE when a collapsing segment has dResidualMw === 0', () => {
+    // A full UFLS ladder that sheds exactly the deficit lands dResidualMw at 0
+    // with no unsaturated generators remaining (betaUnsat → 0 ⇒ collapsing).
+    // Use small stages so every stage fires to zero-out the residual.
+    const tightStages: readonly UflsStageSettings[] = [
+      { id: 'S1', label: 'S1', enabled: true, thresholdHz: 49.50, timeDelaySec: 0.05, shedFractionPct: 100 },
+    ];
+    // G1 alone: sheds all 500 MW at S1 → deficit 500 → residual 500 - 500 = 0.
+    const single = study(
+      { uflsStages: tightStages, generators: [GENS[0]] },
+      [
+        { id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 500 },
+      ],
+    );
+    const run = computeUnderfrequencyTimeline(single);
+    expect(run.steadyStateStatus).not.toBe('COLLAPSE');
+    expect(run.events.some((e) => e.type === 'COLLAPSE')).toBe(false);
+    // Flat tail: final frequency equals the saturated-setpoint frequency, not a
+    // runaway. It should at least not be BELOW the first stage threshold by a
+    // runaway margin.
+    if (run.snapshots.length > 0) {
+      const last = run.snapshots[run.snapshots.length - 1];
+      expect(last.frequencyHz).toBeGreaterThanOrEqual(49.50);
+    }
+  });
+
+  it('still emits COLLAPSE when a collapsing segment has positive residual', () => {
+    // A load step larger than total generator capacity → positive residual → real runaway.
+    const single = study(
+      { uflsStages: UFLS, generators: [GENS[0]] },
+      [
+        { id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 900 }, // > 640 governorMax
+      ],
+    );
+    const run = computeUnderfrequencyTimeline(single);
+    expect(run.steadyStateStatus).toBe('COLLAPSE');
+    expect(run.events.some((e) => e.type === 'COLLAPSE')).toBe(true);
+  });
+});

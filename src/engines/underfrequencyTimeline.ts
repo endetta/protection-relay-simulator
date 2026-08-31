@@ -560,12 +560,23 @@ export function computeUnderfrequencyTimeline(
 
     // ---- No further event in this segment: settle or collapse ----
     if (params.collapsing) {
-      // The governor slope is exhausted (every online unit at its limit). If
-      // the residual deficit is positive the frequency runs away and no UFLS
-      // remains to arrest it → true collapse. If the residual deficit is
-      // non-positive, however, the frequency is over-corrected and must recover
-      // upward (unsaturation events will fire on the next loop).
-      if (params.dResidualMw > EPS) {
+      // The governor slope is exhausted (every online unit at its limit, or
+      // structurally no unsaturated response). If the residual deficit is
+      // positive AND the runaway slope is non-zero, the frequency runs away
+      // with no UFLS left to arrest it → true collapse. (UFR-FIX-05)
+      //
+      // A collapsing segment with dResidualMw === 0 (or runaway slope === 0)
+      // is a degenerate equilibrium — no governor slope, no residual power — so
+      // the frequency is already coasting flat at whatever the saturated units
+      // can hold. Treating that as collapse was spurious: it fired a COLLAPSE
+      // marker + event on a system that simply has zero frequency drift for the
+      // remainder of the window (e.g. UFLS fully arrested exactly to the
+      // deficit, or a BLOCK event whose clamped headroom still covers the loss).
+      // Such a segment settles in place — the flat tail renders as nominal,
+      // which is the faithful f(t).
+      const realRunaway =
+        params.dResidualMw > EPS && Math.abs(params.runawayRocofHzPerSec) > EPS;
+      if (realRunaway) {
         // Trace the runaway out to the window bound so the descent renders as a
         // curve rather than a truncated stub, then latch COLLAPSE. The linear
         // runaway keeps every sample finite; the y-axis clamps the footprint.
