@@ -50,6 +50,7 @@ export type UnderfrequencyAction =
   | { readonly type: 'ADD_GENERATOR_LOSS'; readonly generatorId: GeneratorId; readonly timeSec: number }
   | { readonly type: 'REMOVE_DISTURBANCE_STEP'; readonly stepId: string }
   | { readonly type: 'SET_SIMULATION_SPEED'; readonly speed: UnderfrequencyPlaybackSpeed }
+  | { readonly type: 'SET_SCRUB_TIME'; readonly timeSec: number | null }
   | { readonly type: 'BEGIN_RUN' }
   | { readonly type: 'SET_PLAYBACK_STATE'; readonly playbackState: UnderfrequencyPlaybackState }
   | { readonly type: 'CLEAR_RUN' };
@@ -202,6 +203,11 @@ export function underfrequencyReducer(state: UnderfrequencySimulatorState, actio
     }
     case 'SET_SIMULATION_SPEED': {
       return { ...state, simulationSpeed: action.speed };
+    }
+    case 'SET_SCRUB_TIME': {
+      if (action.timeSec === null) return { ...state, scrubTimeSec: null };
+      if (!isFiniteNumber(action.timeSec)) return state;
+      return { ...state, scrubTimeSec: action.timeSec };
     }
     case 'BEGIN_RUN': {
       return { ...state, playbackState: 'RUNNING' };
