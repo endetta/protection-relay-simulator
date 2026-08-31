@@ -187,7 +187,12 @@ export function buildUnderfrequencyTimelineChartModel(
 
   const xMinData = snapshots.length > 0 ? snapshots[0].engineeringTimeSec : 0;
   const xMaxData = snapshots.length > 0 ? snapshots[snapshots.length - 1].engineeringTimeSec : 1;
-  const xBounds = paddedBounds(xMinData, Math.max(xMaxData, xMinData + 1));
+  const xPadded = paddedBounds(xMinData, Math.max(xMaxData, xMinData + 1));
+  // Engineering time is non-negative: clamp the left pad at t=0 so the curve
+  // starts AT the left edge instead of floating behind a physically meaningless
+  // negative-time gutter (Bug 3: "titik nol tidak di ujung kiri"). The right
+  // pad is kept — it is breathing room for the STEADY/COLLAPSE labels.
+  const xBounds = { min: Math.max(xPadded.min, 0), max: xPadded.max };
 
   const operatedFinal = snapshots.length > 0
     ? new Set(snapshots[snapshots.length - 1].operatedStageIds)
