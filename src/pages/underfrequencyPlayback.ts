@@ -70,9 +70,18 @@ export function useUnderfrequencyPlayback({
       if (previousFrameMs.current === null) previousFrameMs.current = timestampMs;
       const wallDeltaSec = Math.max(0, (timestampMs - previousFrameMs.current) / 1000);
       previousFrameMs.current = timestampMs;
-      const current = scrubTimeSecRef.current ?? 0;
-      const next = Math.min(totalTimeSec, current + wallDeltaSec * simulationSpeed);
-      dispatch({ type: 'SET_SCRUB_TIME', timeSec: next });
+      const result = computeNextScrubSec(
+        scrubTimeSecRef.current,
+        wallDeltaSec,
+        simulationSpeed,
+        totalTimeSec,
+      );
+      if (result.timeSec !== null) {
+        dispatch({ type: 'SET_SCRUB_TIME', timeSec: result.timeSec });
+      }
+      if (result.reachedEnd) {
+        dispatch({ type: 'SET_PLAYBACK_STATE', playbackState: 'COMPLETE' });
+      }
       animationFrame.current = window.requestAnimationFrame(tick);
     };
     animationFrame.current = window.requestAnimationFrame(tick);
