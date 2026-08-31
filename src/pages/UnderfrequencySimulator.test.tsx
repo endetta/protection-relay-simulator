@@ -47,4 +47,29 @@ describe('Underfrequency (81U) page / route integration contracts', () => {
     expect(markup).toContain('Differential Relay');
     expect(markup).toContain('Distance Relay');
   });
+
+  it('keeps the scrub slider and readout in sync with the visible (last) snapshot when scrub is null (IDLE)', () => {
+    const markup = renderInRouter(<UnderfrequencySimulator />);
+
+    // When scrubTimeSec is null (initial IDLE / after CLEAR_RUN), snapshotAtTime
+    // returns the last snapshot and the slider must sit at the end, not at 0.
+    // Regression: scrubValue was `state.scrubTimeSec ?? 0`, so the view showed
+    // the final snapshot while the slider thumb and readout showed 0.00s.
+    const readoutMatch = markup.match(/class="underfrequency-scrub-readout[^"]*"[^>]*>([^<]+)<\/span>/);
+    expect(readoutMatch).not.toBeNull();
+    const readout = readoutMatch![1].trim();
+    const [left, right] = readout.split('/').map((s) => s.trim());
+    // At IDLE the readout must be "total / total" (e.g. "5.00s / 5.00s"), not "0.00s / 5.00s".
+    expect(left).toBe(right);
+    expect(left).not.toBe('0.00s');
+
+    const inputTag = markup.match(/<input[^>]*aria-label="Geser waktu simulasi"[^>]*>/);
+    expect(inputTag).not.toBeNull();
+    const valueMatch = inputTag![0].match(/\svalue="([^"]+)"/);
+    const maxMatch = inputTag![0].match(/\smax="([^"]+)"/);
+    expect(valueMatch).not.toBeNull();
+    expect(maxMatch).not.toBeNull();
+    // Thumb at the end: value === max.
+    expect(valueMatch![1]).toBe(maxMatch![1]);
+  });
 });

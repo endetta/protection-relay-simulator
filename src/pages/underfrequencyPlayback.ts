@@ -9,7 +9,9 @@
  * Latches `SET_PLAYBACK_STATE('COMPLETE')` when `scrubTimeSec >= totalTimeSec`.
  *
  * The scrub computation is exposed as a pure helper (`computeNextScrubSec`) so
- * it can be unit-tested without rAF or React.
+ * it can be unit-tested without rAF or React. The per-frame dispatch decision is
+ * likewise extracted (`shouldDispatchScrub`) so the no-op and stale-ref cases
+ * can be pinned by tests without a fake rAF.
  */
 
 import { useEffect, useRef, type Dispatch } from 'react';
@@ -23,8 +25,7 @@ import type {
 
 /**
  * Advance the engineering-time scrub by a wall-clock delta × playback speed,
- * clamping at `totalTimeSec`. Returns `null` when the run is exhausted (caller
- * should latch `COMPLETE`).
+ * clamping at `totalTimeSec`. `reachedEnd` is the latch signal for COMPLETE.
  */
 export function computeNextScrubSec(
   currentScrubSec: number | null,
@@ -38,6 +39,23 @@ export function computeNextScrubSec(
   const start = currentScrubSec ?? 0;
   const next = Math.min(totalTimeSec, start + wallDeltaSec * simulationSpeed);
   return { timeSec: next, reachedEnd: next >= totalTimeSec };
+}
+
+/**
+ * Decide whether a frame should dispatch a `SET_SCRUB_TIME`. The clock runs at
+ * up to 60 fps, but the scrub usually advances sub-millisecond per frame; we
+ * still need one update per frame so the crosshair tracks the cursor, yet we
+ * must never dispatch when nothing changed (first frame, zero delta) or when the
+ * next value is not finite — both would churn the reducer / memos for no gain
+ * and the latter would be dropped by the reducer anyway.
+ */
+export function shouldDispatchScrub(
+  currentScrubSec: number | null,
+  nextScrubSec: number | null,
+): boolean {
+  if (nextScrubSec === null || !Number.isFinite(nextScrubSec)) return false;
+  if (currentScrubSec === null) return true; // first frame after a reset
+  return nextScrubSec !== currentScrubSec;
 }
 
 export interface UseUnderfrequencyPlaybackParams {
@@ -70,9 +88,11 @@ export function useUnderfrequencyPlayback({
       if (previousFrameMs.current === null) previousFrameMs.current = timestampMs;
       const wallDeltaSec = Math.max(0, (timestampMs - previousFrameMs.current) / 1000);
       previousFrameMs.current = timestampMs;
-      const current = scrubTimeSecRef.current ?? 0;
-      const next = Math.min(totalTimeSec, current + wallDeltaSec * simulationSpeed);
-      dispatch({ type: 'SET_SCRUB_TIME', timeSec: next });
+      const current = scrubTimeSecRef.current;
+      const { timeSec: next } = computeNextScrubSec(current, wallDeltaSec, simulationSpeed, totalTimeSec);
+      if (shouldDispatchScrub(current, next)) {
+        dispatch({ type: 'SET_SCRUB_TIME', timeSec: next });
+      }
       animationFrame.current = window.requestAnimationFrame(tick);
     };
     animationFrame.current = window.requestAnimationFrame(tick);
