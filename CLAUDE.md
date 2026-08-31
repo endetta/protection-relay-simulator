@@ -53,6 +53,12 @@ Non-obvious trap: the **static evaluator has no disturbance-step mechanism** (U0
 - For Overcurrent work, read `memory-bank/progress.md` + `activeContext.md` first to see the O01–O16 implementation baseline before changing anything.
 - After ANY UI/UX change, the producing agent MUST run `.agents/skills/ui-adversarial-test/SKILL.md` against its own revision before declaring PASS (`/test-ui`). It is a hostile bug-hunt harness, not a self-review; unresolvable → verdict `BLOCKED`, never `PASS`.
 
+## Task verification gate (test-first, mandatory)
+
+- **Test-first per task.** Before starting any non-trivial task (engine, presentation, study, utils, or component-behavior changes), define the completion criteria FIRST: a new/extended test that must pass, or — when a test is impractical — an explicit verification checklist tied to the change. A task is not done until its criteria pass. Engine tests follow the existing patterns (`src/engines/<relay>.hardening.test.ts`); UI behavior follows the colocated `*.test.tsx` convention.
+- **Minimal post-task gate.** Before declaring done and before committing, run `npm test` and `npm run build` (strict `tsc`). Any failure means the task is not done. UI/UX changes additionally require the adversarial UI gate (`/test-ui`); engine changes additionally require spec-trace via the `engineering-validator` agent.
+- **Enforcement.** `.githooks/pre-commit` runs `tsc --noEmit` + Vitest on source commits (docs-only commits are skipped); `.github/workflows/ci.yml` runs the same gate on every PR and push to `main`. `--no-verify` only skips the local hook — CI still gates the merge.
+
 ## Git workflow (mandatory)
 
 This repository uses Git + GitHub as the source of truth. There is always a saved, revertible copy on `origin/main`.

@@ -54,6 +54,7 @@ Vitest, no global state library, no chart library (inline SVG).
 
 ## Rules agents must obey
 - Do not modify a FROZEN module (Differential R10) without explicit user approval
+- Do not declare a non-trivial task done without first defining its completion criteria (a new/extended test or an explicit verification checklist) and then passing the test-first gate documented in `CLAUDE.md` ("Task verification gate"). Every commit must pass `tsc --noEmit` + `vitest run`; UI/UX additionally runs `/test-ui`, engine additionally runs the `engineering-validator` trace.
 - Do not claim a module is FROZEN/FINAL unless the user explicitly approves
 - Match exact units, sign conventions, and decision inequalities from the engineering spec; do not invent relay equations
 - Decision inequalities matter: `M <= 1` is no-pickup, `Observed CTI >= Required CTI` passes
