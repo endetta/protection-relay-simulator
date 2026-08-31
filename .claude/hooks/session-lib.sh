@@ -5,7 +5,7 @@
 
 # A lock with no usable pid info (ancestor walk failed) is trusted only for
 # this window, then treated as stale.
-LOCK_MAX_AGE_SEC=$((24 * 60 * 60))
+LOCK_MAX_AGE_SEC=$((2 * 60 * 60))
 
 # win_pid_alive <pid> -> 0 if a Windows process with this pid is running.
 win_pid_alive() {

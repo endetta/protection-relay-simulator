@@ -49,12 +49,6 @@ export interface UnderfrequencyTripMarker {
   readonly shedMw: number;
 }
 
-export interface UnderfrequencyPhaseZone {
-  readonly id: string;
-  readonly label: string;
-  readonly kind: 'PRE_DISTURBANCE' | 'DECAY' | 'ARrest' | 'COLLAPSE';
-}
-
 export interface UnderfrequencyTimelineChartModel {
   readonly status: 'VALID' | 'INVALID';
   readonly xAxis: UnderfrequencyChartAxis;
