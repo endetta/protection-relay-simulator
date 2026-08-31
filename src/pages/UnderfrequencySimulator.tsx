@@ -190,8 +190,8 @@ export function UnderfrequencySimulator() {
           ]}
           activeStep={focusStep}
           onStepChange={setFocusStep}
-          parametersAction={<button type='button' className='section-utility-button' onClick={() => setParameterSectionGroup(!anyParameterOpen)}>{anyParameterOpen ? 'Ciutkan semua' : 'Bentangkan semua'}</button>}
-          analysisAction={<button type='button' className='section-utility-button' onClick={() => setAnalysisSectionGroup(!anyAnalysisOpen)}>{anyAnalysisOpen ? 'Ciutkan semua' : 'Bentangkan semua'}</button>}
+          parametersAction={<button type='button' className='section-utility-button' onClick={() => setParameterSectionGroup(!anyParameterOpen)}>{anyParameterOpen ? 'Collapse' : 'Expand'}</button>}
+          analysisAction={<button type='button' className='section-utility-button' onClick={() => setAnalysisSectionGroup(!anyAnalysisOpen)}>{anyAnalysisOpen ? 'Collapse' : 'Expand'}</button>}
           intl={{
             skipToParameters: 'Lompat ke parameter',
             stepsAriaLabel: 'Langkah simulasi',
