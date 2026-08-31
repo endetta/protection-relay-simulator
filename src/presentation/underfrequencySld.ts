@@ -84,8 +84,6 @@ export function buildUnderfrequencySldModel(
   snapshot: UnderfrequencyTimelineSnapshot | null,
   run: UnderfrequencyTimelineRun | null,
 ): UnderfrequencySldModel {
-  const baseLoadMw = study.system.baseLoadMw;
-
   const generators: readonly UnderfrequencySldGenerator[] = snapshot
     ? study.generators.map((g) => {
         const snap = snapshot.generators.find((s) => s.generatorId === g.id);
@@ -98,6 +96,8 @@ export function buildUnderfrequencySldModel(
           headroomMw: snap?.headroomMw ?? Math.max(0, g.governorMaxMw - g.initialMw),
           saturated: snap?.saturated ?? false,
           rpm: snap?.rpm ?? (120 * study.system.fNominalHz) / g.poles,
+          mwRated: g.mwRated,
+          poles: g.poles,
         };
       })
     : study.generators.map((g) => ({
@@ -109,6 +109,8 @@ export function buildUnderfrequencySldModel(
         headroomMw: Math.max(0, g.governorMaxMw - g.initialMw),
         saturated: false,
         rpm: (120 * study.system.fNominalHz) / g.poles,
+        mwRated: g.mwRated,
+        poles: g.poles,
       }));
 
   const collapse = run?.steadyStateStatus === 'COLLAPSE';
@@ -143,6 +145,9 @@ export function buildUnderfrequencySldModel(
 
 // ────────────────── D8 shed allocation (presentation-only) ─────────────────
 
+/** Mutable helper type for D8 fill loop; returned as the public readonly type. */
+type MutableSldBlock = Omit<UnderfrequencySldBlock, 'shed'> & { shed: boolean };
+
 function buildLoadBlocks(
   study: UnderfrequencyStudyDefinition,
   operatedStageIds: readonly string[],
@@ -154,7 +159,7 @@ function buildLoadBlocks(
   const baseLoadMw = study.system.baseLoadMw;
 
   const ids = Object.keys(LOAD_BLOCK_FRACTIONS) as UnderfrequencySldBlockId[];
-  const blocks: UnderfrequencySldBlock[] = ids.map((id) => ({
+  const blocks: MutableSldBlock[] = ids.map((id) => ({
     id,
     fractionPct: LOAD_BLOCK_FRACTIONS[id] * 100,
     baseMw: LOAD_BLOCK_FRACTIONS[id] * baseLoadMw,

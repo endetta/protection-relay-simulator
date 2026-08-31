@@ -8,7 +8,9 @@ import { UnderfrequencyAnalysisPanel } from '../components/underfrequency/Underf
 import { UnderfrequencyParameterPanel } from '../components/underfrequency/UnderfrequencyParameterPanel';
 import { SimulatorLayout } from '../layouts/SimulatorLayout';
 import { buildUnderfrequencyAnalysisModel, type UnderfrequencyTone } from '../presentation/underfrequencyAnalysis';
+import { snapshotAtTime } from '../presentation/underfrequencyTimelineChart';
 import { computeUnderfrequencyTimeline } from '../engines/underfrequencyTimeline';
+import { useUnderfrequencyPlayback } from './underfrequencyPlayback';
 import type {
   UnderfrequencyTimelineSnapshot,
 } from '../types/underfrequency';
@@ -33,7 +35,6 @@ export function UnderfrequencySimulator() {
     undefined,
     createInitialUnderfrequencyState,
   );
-  const [timelineSnapshot, setTimelineSnapshot] = useState<UnderfrequencyTimelineSnapshot | null>(null);
   const [parameterDraftValid, setParameterDraftValid] = useState(true);
   const [helpOpen, setHelpOpen] = useState(false);
   const [syncKey, setSyncKey] = useState(0);
@@ -89,13 +90,25 @@ export function UnderfrequencySimulator() {
     [state, staticResult, run],
   );
 
-  const handleSnapshotChange = useCallback((snapshot: UnderfrequencyTimelineSnapshot | null) => {
-    setTimelineSnapshot(snapshot);
-  }, []);
+  // Page-level playback clock: one scrubTimeSec in the reducer, one snapshot
+  // resolution here — every consumer (SLD, chart, generator diagram) renders
+  // from the same visible snapshot, so views stay synchronized.
+  const totalTimeSec = run?.finalTimeSec ?? 0;
+  useUnderfrequencyPlayback({
+    playbackState: state.playbackState,
+    simulationSpeed: state.simulationSpeed,
+    totalTimeSec,
+    scrubTimeSec: state.scrubTimeSec,
+    dispatch,
+  });
+
+  const visibleSnapshot: UnderfrequencyTimelineSnapshot | null = useMemo(() => {
+    if (!run || run.status !== 'VALID' || run.snapshots.length === 0) return null;
+    return snapshotAtTime(run.snapshots, state.scrubTimeSec);
+  }, [run, state.scrubTimeSec]);
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });
-    setTimelineSnapshot(null);
     setParameterDraftValid(true);
     setSyncKey((key) => key + 1);
   }, []);
@@ -133,13 +146,11 @@ export function UnderfrequencySimulator() {
       <FrequencyTimelineChart
         run={run}
         study={state.study}
-        playbackState={state.playbackState}
-        simulationSpeed={state.simulationSpeed}
-        dispatch={dispatch}
-        onSnapshotChange={handleSnapshotChange}
+        scrubTimeSec={state.scrubTimeSec}
+        visibleSnapshot={visibleSnapshot}
       />
       <div className='underfrequency-live-cards'>
-        <GeneratorDiagram snapshot={timelineSnapshot} study={state.study} />
+        <GeneratorDiagram snapshot={visibleSnapshot} study={state.study} />
         <SheddingChart
           uflsStages={state.study.uflsStages}
           baseLoadMw={state.study.system.baseLoadMw}

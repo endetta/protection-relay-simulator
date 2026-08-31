@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import type { UnderfrequencySimulatorState } from '../types/underfrequency';
 import {
   createInitialUnderfrequencyState,
   underfrequencyReducer,
   type UnderfrequencyAction,
-  type UnderfrequencySimulatorState,
 } from './underfrequencyState';
 
 function reduce(state: UnderfrequencySimulatorState, action: UnderfrequencyAction): UnderfrequencySimulatorState {

@@ -28,7 +28,7 @@ function makeSnapshot(partial: Partial<UnderfrequencyTimelineSnapshot>): Underfr
   };
 }
 
-function makeRun(partial: Partial<UnderfrequencyTimelineRun>): UnderfrequencyTimelineRun {
+function makeRun(partial: Partial<UnderfrequencyTimelineRun> = {}): UnderfrequencyTimelineRun {
   return {
     studyId: 'UFR-01',
     snapshots: [makeSnapshot({ engineeringTimeSec: 0 })],
