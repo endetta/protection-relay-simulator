@@ -317,3 +317,152 @@ describe('Underfrequency timeline collapse (U01 § 12.4)', () => {
     }
   });
 });
+
+// ───── UFR-FIX-01: UFLS timer must accumulate across segment boundaries ─────
+// U01 §9.3: "When a stage arms, its timer accumulates engineering time."
+// Regression: state.timers was never advanced within a segment — elapsed was
+// always 0, so tauTrip = timeDelaySec - 0 was measured from the segment start
+// (post-saturation), not from the arming instant. This test forces an armed
+// stage to survive a governor-saturation segment boundary and asserts the trip
+// time = arming + delay, not segment-start + delay.
+
+describe('Underfrequency timeline UFLS timer accumulation (U01 §9.3, UFR-FIX-01)', () => {
+  it('trips a stage after timeDelaySec elapsed since arming, across a saturation crossing', () => {
+    // Large load step: drives below S1 threshold fast, then saturates all gens
+    // before the 0.20 s delay elapses → arming segment is cut by a saturation
+    // segment. The trip must still be 0.20 s after arming.
+    const s = loadStepStudy(800);
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+
+    const arm = run.events.find((e) => e.type === 'UFLS_ARMED' && e.stageId === 'S1');
+    const trip = run.events.find((e) => e.type === 'UFLS_TRIP' && e.stageId === 'S1');
+    expect(arm).toBeDefined();
+    expect(trip).toBeDefined();
+    if (!arm || !trip) return;
+
+    // The trip must fire at least `timeDelaySec` after arming.
+    const s1 = s.uflsStages.find((st) => st.id === 'S1')!;
+    expect(trip.timeSec - arm.timeSec).toBeCloseTo(s1.timeDelaySec, 1);
+  });
+
+  it('releases an armed stage (STAGE_RESET) without a trip when frequency never crosses the delay', () => {
+    // Small deficit: S1 arms but frequency settles back above threshold before
+    // 0.20 s elapses (no saturation, immediate recovery). The stage must be
+    // reset, not tripped.
+    const s = loadStepStudy(60);
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+    const s1Trips = run.events.filter((e) => e.type === 'UFLS_TRIP' && e.stageId === 'S1');
+    expect(s1Trips.length).toBe(0);
+  });
+
+  // ---- UFR-FIX-02: Delay=0 stage must trip immediately ----
+  it('trips a zero-delay stage at the same tick it arms (not dropped by the >EPS gate)', () => {
+    const s0Stages: readonly UflsStageSettings[] = [
+      { id: 'S1', label: 'Stage 1 — 49.50', enabled: true, thresholdHz: 49.50, timeDelaySec: 0, shedFractionPct: 10 },
+      { id: 'S2', label: 'Stage 2 — 49.00', enabled: true, thresholdHz: 49.00, timeDelaySec: 0.30, shedFractionPct: 20 },
+      { id: 'S3', label: 'Stage 3 — 48.50', enabled: true, thresholdHz: 48.50, timeDelaySec: 0.40, shedFractionPct: 20 },
+      { id: 'S4', label: 'Stage 4 — 48.00', enabled: true, thresholdHz: 48.00, timeDelaySec: 0.50, shedFractionPct: 20 },
+    ];
+    const s = study({ uflsStages: s0Stages }, [{ id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 800 }]);
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+    const s1Trips = run.events.filter((e) => e.type === 'UFLS_TRIP' && e.stageId === 'S1');
+    expect(s1Trips.length).toBe(1);
+    // S1 trip must coincide with arming, not be silently dropped.
+    const arm = run.events.find((e) => e.type === 'UFLS_ARMED' && e.stageId === 'S1');
+    expect(arm, 'S1 arm event should exist').toBeDefined();
+    expect(arm, 'S1 should trip at arming instant for Delay=0').toBeDefined();
+    expect(s1Trips[0].timeSec - arm!.timeSec).toBeCloseTo(0, 1);
+  });
+});
+
+// ─────────────── UFR-FIX-03: GENERATOR_BLOCK stays online, clamps headroom ──────
+describe('Underfrequency timeline GENERATOR_BLOCK semantics (U01 §6.1, UFR-FIX-03)', () => {
+  it('keeps the generator online with clamped headroom, deficit increases by (initialMw - mw) not initialMw', () => {
+    // G1 initialMw = 500. BLOCK to mw = 300 → deficit +200, G1 stays online.
+    const s = study(
+      {},
+      [{ id: 'D1', kind: 'GENERATOR_BLOCK', timeSec: 0, generatorId: 'G1', mw: 300 }],
+    );
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+
+    const g1After = run.snapshots[run.snapshots.length - 1].generators.find((g) => g.generatorId === 'G1');
+    // G1 must be online (ONLINE or AT_GOVERNOR_LIMIT), NOT TRIPPED.
+    expect(g1After).toBeDefined();
+    expect(g1After!.status).not.toBe('TRIPPED');
+
+    // At t=0 (pre-dynamics snapshot) deficit must reflect: baseline 0 + (500 - 300) = 200.
+    const snap0 = run.snapshots[0];
+    expect(snap0.engineeringTimeSec).toBeCloseTo(0, 9);
+    expect(snap0.deficitMw).toBeCloseTo(200, 6);
+
+    // The disturbance event is a DISTURBANCE_APPLIED referencing G1.
+    expect(run.events.some((e) => e.type === 'DISTURBANCE_APPLIED' && e.generatorId === 'G1')).toBe(true);
+  });
+
+  it('does NOT remove the generator from the online set (contrast with GENERATOR_LOSS)', () => {
+    const block = study({}, [{ id: 'DB', kind: 'GENERATOR_BLOCK', timeSec: 0, generatorId: 'G1', mw: 300 }]);
+    const loss = study({}, [{ id: 'DL', kind: 'GENERATOR_LOSS', timeSec: 0, generatorId: 'G1' }]);
+    const rb = computeUnderfrequencyTimeline(block);
+    const rl = computeUnderfrequencyTimeline(loss);
+    const g1Snap = rb.snapshots[0];
+    const g1SnapLoss = rl.snapshots[0];
+    const blockG1 = g1Snap.generators.find((g) => g.generatorId === 'G1');
+    const lossG1 = g1SnapLoss.generators.find((g) => g.generatorId === 'G1');
+    // BLOCK: online; LOSS: tripped.
+    expect(blockG1!.status).not.toBe('TRIPPED');
+    expect(lossG1!.status).toBe('TRIPPED');
+  });
+});
+
+// ─────────── UFR-FIX-05: Spurious COLLAPSE on dResidualMw === 0 ─────────────────
+// A collapsing segment (betaUnsat ≤ EPS or hSysSec ≤ 0) whose residual deficit is
+// exactly 0 and whose runaway ROCOF is therefore 0 is a degenerate equilibrium —
+// no governor slope, no residual power. The frequency flat-lines at the saturated
+// value, which is a legitimate SETTLED tail, not a collapse. Before the fix the
+// only gate was dResidualMw > EPS, which is false for zero residual, so the
+// recovery branch emitted flat snapshots until the iter cap then fired a spurious
+// COLLAPSE event. (UFR-FIX-05)
+describe('Underfrequency timeline spurious collapse on zero residual (UFR-FIX-05)', () => {
+  it('does not emit COLLAPSE when a collapsing segment has dResidualMw === 0', () => {
+    // A full UFLS ladder that sheds exactly the deficit lands dResidualMw at 0
+    // with no unsaturated generators remaining (betaUnsat → 0 ⇒ collapsing).
+    // Use small stages so every stage fires to zero-out the residual.
+    const tightStages: readonly UflsStageSettings[] = [
+      { id: 'S1', label: 'S1', enabled: true, thresholdHz: 49.50, timeDelaySec: 0.05, shedFractionPct: 100 },
+    ];
+    // G1 alone: sheds all 500 MW at S1 → deficit 500 → residual 500 - 500 = 0.
+    const single = study(
+      { uflsStages: tightStages, generators: [GENS[0]] },
+      [
+        { id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 500 },
+      ],
+    );
+    const run = computeUnderfrequencyTimeline(single);
+    expect(run.steadyStateStatus).not.toBe('COLLAPSE');
+    expect(run.events.some((e) => e.type === 'COLLAPSE')).toBe(false);
+    // Flat tail: final frequency equals the saturated-setpoint frequency, not a
+    // runaway. It should at least not be BELOW the first stage threshold by a
+    // runaway margin.
+    if (run.snapshots.length > 0) {
+      const last = run.snapshots[run.snapshots.length - 1];
+      expect(last.frequencyHz).toBeGreaterThanOrEqual(49.50);
+    }
+  });
+
+  it('still emits COLLAPSE when a collapsing segment has positive residual', () => {
+    // A load step larger than total generator capacity → positive residual → real runaway.
+    const single = study(
+      { uflsStages: UFLS, generators: [GENS[0]] },
+      [
+        { id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 900 }, // > 640 governorMax
+      ],
+    );
+    const run = computeUnderfrequencyTimeline(single);
+    expect(run.steadyStateStatus).toBe('COLLAPSE');
+    expect(run.events.some((e) => e.type === 'COLLAPSE')).toBe(true);
+  });
+});

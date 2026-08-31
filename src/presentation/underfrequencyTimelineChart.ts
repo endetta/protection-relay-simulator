@@ -294,6 +294,13 @@ export function buildUnderfrequencyTimelineTooltip(
     if (ev.stageId) {
       if (ev.type === 'UFLS_TRIP') operated.add(ev.stageId);
       if (ev.type === 'UFLS_ARMED') armed.add(ev.stageId);
+      // A trip, timer-reset, or stage-reset releases the armed state for that
+      // stage — otherwise the tooltip would show an "Armed" pill alongside the
+      // "Operated" pill at the trip instant (or an "Armed" pill at a disarm).
+      // (UFR-FIX-04)
+      if (ev.type === 'UFLS_TRIP' || ev.type === 'UFLS_TIMER_RESET' || ev.type === 'STAGE_RESET') {
+        armed.delete(ev.stageId);
+      }
     }
     const subject = ev.stageId ? labelFor(ev.stageId) : ev.generatorId ?? ev.detail ?? '';
     eventLabels.push(subject ? `${ev.type} · ${subject}` : ev.type);

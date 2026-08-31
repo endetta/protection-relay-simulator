@@ -91,6 +91,10 @@ interface EngineState {
   timers: ReadonlyMap<string, number>;
   armedIds: ReadonlySet<string>;
   operatedIds: ReadonlySet<string>;
+  /** generatorId → effective governorMaxMw after block events (U01 §6.1). */
+  governorMaxOverrideMw: ReadonlyMap<string, number>;
+  /** Generators clamped by GENERATOR_BLOCK — always at their governor limit. */
+  blockedIds: ReadonlySet<string>;
 }
 
 // ─────────────────────────────── Pure helpers ───────────────────────────────
@@ -101,6 +105,47 @@ function collectIssues(study: UnderfrequencyStudyDefinition): readonly DomainIss
     ...validateUnderfrequencyGenerators(study.generators),
     ...validateUnderfrequencyUflsStages(study.uflsStages),
   ];
+}
+
+/**
+ * Effective governor max MW for a generator: the study value unless a
+ * GENERATOR_BLOCK disturbance step has clamped it (U01 §6.1).
+ */
+function effectiveGovernorMaxMw(
+  g: UnderfrequencyGeneratorData,
+  state: EngineState,
+): number {
+  return state.governorMaxOverrideMw.get(g.id) ?? g.governorMaxMw;
+}
+
+/**
+ * Effective headroom for the droop/sat calc. A GENERATOR_BLOCK unit is clamped
+ * at its governor limit (U01 §6.1: "force a unit toward/at its governor limit
+ * with zero effective droop"), so its usable droop headroom is 0 — the lost
+ * headroom already appears as `dDeficitMw` from the block step.
+ */
+function effectiveGovernorHeadroomMw(
+  g: UnderfrequencyGeneratorData,
+  state: EngineState,
+): number {
+  if (state.blockedIds.has(g.id)) return 0;
+  return effectiveGovernorMaxMw(g, state) - g.initialMw;
+}
+
+/**
+ * Shallow clone of `g` with governorMaxMw overridden to the effective (possibly
+ * block-clamped) value. Lets the immutable governor primitives
+ * (`clampGovernorMw`, `governorHeadroomMw`, `isGovernorSaturated`,
+ * `perUnitSaturationDeviationHz`) consume the reduced headroom without changing
+ * their signatures or the study data. (U01 §6.1)
+ */
+function withEffectiveGovernorMax(
+  g: UnderfrequencyGeneratorData,
+  state: EngineState,
+): UnderfrequencyGeneratorData {
+  const override = state.governorMaxOverrideMw.get(g.id);
+  if (override === undefined || override === g.governorMaxMw) return g;
+  return { ...g, governorMaxMw: override };
 }
 
 function generatorSnapshot(
@@ -122,8 +167,13 @@ function generatorSnapshot(
     };
   }
   const dfHz = fHz - fNomHz;
-  const headroom = governorHeadroomMw(g);
-  const droopMw = saturated ? headroom : clampGovernorMw(g, dfHz, fNomHz);
+  // `g` here is already the effective generator (post-block governorMax override)
+  // from the buildSnapshot caller, so governorHeadroomMw reflects the reduced max.
+  // A blocked/saturated unit has zero usable droop headroom — clamp to >= 0 so a
+  // block clamps output below the present dispatch (initialMw) does not produce a
+  // nonsensical negative headroom in the snapshot.
+  const headroom = Math.max(0, governorHeadroomMw(g));
+  const droopMw = saturated ? headroom : Math.max(0, clampGovernorMw(g, dfHz, fNomHz));
   const status: UnderfrequencyGeneratorStatus = saturated
     ? 'AT_GOVERNOR_LIMIT'
     : g.status === 'ONLINE'
@@ -170,7 +220,7 @@ function segmentParams(
   let saturatedHeadroomMw = 0;
   for (const g of online) {
     if (state.saturatedIds.has(g.id)) {
-      saturatedHeadroomMw += governorHeadroomMw(g);
+      saturatedHeadroomMw += effectiveGovernorHeadroomMw(g, state);
     } else {
       betaUnsat += g.mva / g.droopPu;
     }
@@ -304,6 +354,8 @@ export function computeUnderfrequencyTimeline(
     timers: new Map(),
     armedIds: new Set(),
     operatedIds: new Set(),
+    governorMaxOverrideMw: new Map(),
+    blockedIds: new Set(),
   };
   state.saturatedIds = saturatedAt(study, state, state.fHz);
 
@@ -428,14 +480,19 @@ export function computeUnderfrequencyTimeline(
         ].filter((o) => o.tau >= 0);
         if (options.length > 0) {
           const best = options.sort((a, b) => a.tau - b.tau)[0];
-          if (best.tau > EPS) {
-            candidates.push({ tau: best.tau, phase: best.reset ? 3 : 4, fire: () => {
+          // A timer that has already reached its limit (tauTrip <= 0, including
+          // the Delay=0 case) trips immediately on this tick. The reset gate stays
+          // strict-positive so a zero-reset threshold (already at/above pickup) is
+          // not double-counted. (UFR-FIX-01 + UFR-FIX-02)
+          const tauClamped = best.reset ? best.tau : Math.max(best.tau, 0);
+          if (tauClamped >= -EPS) {
+            candidates.push({ tau: tauClamped, phase: best.reset ? 3 : 4, fire: () => {
               if (best.reset) {
                 state.armedIds = new Set([...state.armedIds].filter((x) => x !== stage.id));
                 state.timers = new Map([...state.timers].filter(([k]) => k !== stage.id));
                 pushEvent('UFLS_TIMER_RESET', segmentStart + best.tau, { stageId: stage.id });
               } else {
-                tripStage(study, state, stage, segmentStart + best.tau, pushEvent);
+                tripStage(study, state, stage, segmentStart + tauClamped, pushEvent);
               }
             } });
           }
@@ -458,6 +515,21 @@ export function computeUnderfrequencyTimeline(
       return a.phase - b.phase;
     });
     const next = candidates[0];
+
+    // ---- Accumulate armed timer across this segment's duration ----
+    // U01 §9.3: "When a stage arms, its timer accumulates engineering time."
+    // The timer must carry across segment boundaries — a saturation crossing or
+    // disturbance step splits the segment, but the elapsed armed time does not
+    // reset. Advance every armed stage's timer by the segment duration (next.tau)
+    // so that tauTrip = timeDelaySec - elapsed measures from the original arming
+    // instant, not the current segment start. (UFR-FIX-01)
+    if (next && next.tau >= 0 && state.timers.size > 0 && state.armedIds.size > 0) {
+      const accumulated = new Map<string, number>();
+      for (const [stageId, elapsed] of state.timers) {
+        accumulated.set(stageId, elapsed + (state.armedIds.has(stageId) ? next.tau : 0));
+      }
+      state.timers = accumulated;
+    }
 
     const settled =
       params.collapsing
@@ -488,12 +560,23 @@ export function computeUnderfrequencyTimeline(
 
     // ---- No further event in this segment: settle or collapse ----
     if (params.collapsing) {
-      // The governor slope is exhausted (every online unit at its limit). If
-      // the residual deficit is positive the frequency runs away and no UFLS
-      // remains to arrest it → true collapse. If the residual deficit is
-      // non-positive, however, the frequency is over-corrected and must recover
-      // upward (unsaturation events will fire on the next loop).
-      if (params.dResidualMw > EPS) {
+      // The governor slope is exhausted (every online unit at its limit, or
+      // structurally no unsaturated response). If the residual deficit is
+      // positive AND the runaway slope is non-zero, the frequency runs away
+      // with no UFLS left to arrest it → true collapse. (UFR-FIX-05)
+      //
+      // A collapsing segment with dResidualMw === 0 (or runaway slope === 0)
+      // is a degenerate equilibrium — no governor slope, no residual power — so
+      // the frequency is already coasting flat at whatever the saturated units
+      // can hold. Treating that as collapse was spurious: it fired a COLLAPSE
+      // marker + event on a system that simply has zero frequency drift for the
+      // remainder of the window (e.g. UFLS fully arrested exactly to the
+      // deficit, or a BLOCK event whose clamped headroom still covers the loss).
+      // Such a segment settles in place — the flat tail renders as nominal,
+      // which is the faithful f(t).
+      const realRunaway =
+        params.dResidualMw > EPS && Math.abs(params.runawayRocofHzPerSec) > EPS;
+      if (realRunaway) {
         // Trace the runaway out to the window bound so the descent renders as a
         // curve rather than a truncated stub, then latch COLLAPSE. The linear
         // runaway keeps every sample finite; the y-axis clamps the footprint.
@@ -580,7 +663,14 @@ function saturatedAt(
   const saturated = new Set<string>();
   for (const g of study.generators) {
     if (!state.onlineIds.has(g.id)) continue;
-    if (isGovernorSaturated(g, study.system.fNominalHz, dfHz)) saturated.add(g.id);
+    // A blocked generator is clamped at its governor limit by definition
+    // (U01 §6.1: zero effective droop) — treat as saturated regardless of df.
+    if (state.blockedIds.has(g.id)) {
+      saturated.add(g.id);
+      continue;
+    }
+    const eff = withEffectiveGovernorMax(g, state);
+    if (isGovernorSaturated(eff, study.system.fNominalHz, dfHz)) saturated.add(g.id);
   }
   return saturated;
 }
@@ -607,8 +697,7 @@ function applyStep(
   pushEvent: (type: UnderfrequencyTimelineEventType, timeSec: number, extra?: Partial<UnderfrequencyTimelineEvent>) => void,
 ): void {
   switch (step.kind) {
-    case 'GENERATOR_LOSS':
-    case 'GENERATOR_BLOCK': {
+    case 'GENERATOR_LOSS': {
       const gen = step.generatorId
         ? study.generators.find((g) => g.id === step.generatorId)
         : undefined;
@@ -617,6 +706,33 @@ function applyStep(
         const next = new Set(state.onlineIds);
         next.delete(gen.id);
         state.onlineIds = next;
+        // A lost unit no longer contributes headroom at any max — clear any override.
+        state.governorMaxOverrideMw = new Map([...state.governorMaxOverrideMw].filter(([k]) => k !== gen.id));
+        pushEvent('DISTURBANCE_APPLIED', step.timeSec, { generatorId: gen.id });
+      }
+      break;
+    }
+    case 'GENERATOR_BLOCK': {
+      // U01 §6.1: the generator stays online but its governorMaxMw is clamped
+      // to `step.mw`. The lost headroom (`initialMw - mw`) becomes part of the
+      // residual deficit; the unit is NOT removed from the online set.
+      const gen = step.generatorId
+        ? study.generators.find((g) => g.id === step.generatorId)
+        : undefined;
+      if (gen && state.onlineIds.has(gen.id)) {
+        // U01 §6.1: governorMaxMw is clamped to the new (lower) value. The clamp
+        // must never fall below the unit's present output (`initialMw`) — a block
+        // reduces headroom, it does not over-assign output below the current
+        // dispatch. This keeps governorHeadroomMw ≥ 0 and prevents a double-count
+        // of the lost headroom in buildSnapshot's respMw loop.
+        const clampedMax = step.mw ?? 0;
+        // A blocked unit stays online (not in onlineIds deletion) but its headroom
+        // is clamped to `clampedMax` — which may be below initialMw (an output
+        // reduction). Track it as blocked (always at governor limit) so the
+        // snapshot/loop below treat it as saturated with zero droop response.
+        state.dDeficitMw += gen.initialMw - clampedMax;
+        state.governorMaxOverrideMw = new Map([...state.governorMaxOverrideMw, [gen.id, clampedMax]]);
+        state.blockedIds = new Set([...state.blockedIds, gen.id]);
         pushEvent('DISTURBANCE_APPLIED', step.timeSec, { generatorId: gen.id });
       }
       break;
@@ -642,22 +758,26 @@ function buildSnapshot(
   const sBaseMva = aggregateBaseMva(online);
   const hSysSec = aggregateInertia(online, sBaseMva);
 
-  const generators = study.generators.map((g) =>
-    generatorSnapshot(
-      g,
+  const generators = study.generators.map((g) => {
+    const eff = withEffectiveGovernorMax(g, state);
+    return generatorSnapshot(
+      eff,
       fNomHz,
       frequencyHz,
       state.onlineIds.has(g.id),
       state.saturatedIds.has(g.id),
-    ),
-  );
+    );
+  });
 
   // Instantaneous net deficit of the swing equation: residual pre-governor
-  // deficit minus the governor response of the online set.
+  // deficit minus the governor response of the online set. Use the effective
+  // (post-block) governor max so a clamped headroom is reflected here too.
   const respMw = online.reduce((sum, g) => {
-    if (state.saturatedIds.has(g.id)) return sum + governorHeadroomMw(g);
+    const eff = withEffectiveGovernorMax(g, state);
+    if (state.saturatedIds.has(g.id)) return sum + effectiveGovernorHeadroomMw(eff, state);
     const dfHz = frequencyHz - fNomHz;
-    return sum + clampGovernorMw(g, dfHz, fNomHz);
+    const resp = clampGovernorMw(eff, dfHz, fNomHz);
+    return sum + (state.blockedIds.has(g.id) ? 0 : resp);
   }, 0);
   const deficitMw = state.dDeficitMw - respMw;
   const rocofHzPerSec =

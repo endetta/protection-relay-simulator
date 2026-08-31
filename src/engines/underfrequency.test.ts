@@ -259,3 +259,36 @@ describe('Underfrequency evaluateUnderfrequencySystem (U01 § 11)', () => {
     }
   });
 });
+
+// ────── UFR-FIX-06: validator covers stages[0].shed and reports all issues ─────
+
+describe('Underfrequency UFLS validator completeness (UFR-FIX-06)', () => {
+  it('rejects a shedFractionPct > 100 on the FIRST stage (was previously unchecked)', () => {
+    const bad0: UflsStageSettings[] = [
+      { id: 'S1', label: 'S1', enabled: true, thresholdHz: 49.50, timeDelaySec: 0.20, shedFractionPct: 150 },
+      ...UFLS.slice(1),
+    ];
+    const issues = validateUnderfrequencyUflsStages(bad0);
+    expect(issues.some((i) => i.code === 'NON_POSITIVE_SHED_FRACTION' && i.path?.includes('S1'))).toBe(true);
+  });
+
+  it('rejects a shedFractionPct < 0 on stage 0', () => {
+    const bad0: UflsStageSettings[] = [
+      { id: 'S1', label: 'S1', enabled: true, thresholdHz: 49.50, timeDelaySec: 0.20, shedFractionPct: -5 },
+      ...UFLS.slice(1),
+    ];
+    expect(validateUnderfrequencyUflsStages(bad0).some((i) => i.code === 'NON_POSITIVE_SHED_FRACTION')).toBe(true);
+  });
+
+  it('reports BOTH an order inversion and a shed violation without masking (no early break)', () => {
+    // S1 OK (49.50), S2 inverted AND shed > 100. Both issues must be reported.
+    const bad: UflsStageSettings[] = [
+      UFLS[0], // 49.50
+      { ...UFLS[1], thresholdHz: 49.60, shedFractionPct: 120 }, // out of order + invalid shed
+      ...UFLS.slice(2),
+    ];
+    const issues = validateUnderfrequencyUflsStages(bad);
+    expect(issues.some((i) => i.code === 'INVALID_UFLS_ORDER')).toBe(true);
+    expect(issues.some((i) => i.code === 'NON_POSITIVE_SHED_FRACTION')).toBe(true);
+  });
+});

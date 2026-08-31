@@ -299,16 +299,14 @@ export function validateUnderfrequencyUflsStages(
 ): readonly DomainIssue[] {
   const issues: DomainIssue[] = [];
   // Stage ordering must be strictly descending threshold (applied with tolerance).
+  // The sweep is non-breaking so every violation is reported (a single reported
+  // issue misleads the parameter panel's per-field highlighting); a later stage
+  // must not mask an earlier stage's offence.
   for (let i = 1; i < stages.length; i += 1) {
     const prev = stages[i - 1];
     const curr = stages[i];
     if (curr.thresholdHz >= prev.thresholdHz && !nearlyEqual(curr.thresholdHz, prev.thresholdHz)) {
       issues.push(issue('INVALID_UFLS_ORDER', `uflsStages.${curr.id}.thresholdHz`, 'UFLS stages harus diurutkan berdasarkan threshold yang menurun secara strict.'));
-      break;
-    }
-    if (curr.shedFractionPct < 0 || curr.shedFractionPct > 100) {
-      issues.push(issue('NON_POSITIVE_SHED_FRACTION', `uflsStages.${curr.id}.shedFractionPct`, 'Shed fraction harus berada dalam [0, 100].'));
-      break;
     }
   }
   for (const s of stages) {
@@ -317,6 +315,11 @@ export function validateUnderfrequencyUflsStages(
     }
     if (!Number.isFinite(s.timeDelaySec) || s.timeDelaySec < 0) {
       issues.push(issue('NUMERICAL_RANGE', `uflsStages.${s.id}.timeDelaySec`, 'Delay harus finite dan >= 0.'));
+    }
+    // Shed fraction bounds apply to ALL stages, including stages[0] — the
+    // previous loop started at i=1 so stage 0 was never checked. (UFR-FIX-06)
+    if (s.shedFractionPct < 0 || s.shedFractionPct > 100) {
+      issues.push(issue('NON_POSITIVE_SHED_FRACTION', `uflsStages.${s.id}.shedFractionPct`, 'Shed fraction harus berada dalam [0, 100].'));
     }
   }
   return issues;
