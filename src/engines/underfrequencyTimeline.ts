@@ -428,14 +428,19 @@ export function computeUnderfrequencyTimeline(
         ].filter((o) => o.tau >= 0);
         if (options.length > 0) {
           const best = options.sort((a, b) => a.tau - b.tau)[0];
-          if (best.tau > EPS) {
-            candidates.push({ tau: best.tau, phase: best.reset ? 3 : 4, fire: () => {
+          // A timer that has already reached its limit (tauTrip <= 0, including
+          // the Delay=0 case) trips immediately on this tick. The reset gate stays
+          // strict-positive so a zero-reset threshold (already at/above pickup) is
+          // not double-counted. (UFR-FIX-01 + UFR-FIX-02)
+          const tauClamped = best.reset ? best.tau : Math.max(best.tau, 0);
+          if (tauClamped >= -EPS) {
+            candidates.push({ tau: tauClamped, phase: best.reset ? 3 : 4, fire: () => {
               if (best.reset) {
                 state.armedIds = new Set([...state.armedIds].filter((x) => x !== stage.id));
                 state.timers = new Map([...state.timers].filter(([k]) => k !== stage.id));
                 pushEvent('UFLS_TIMER_RESET', segmentStart + best.tau, { stageId: stage.id });
               } else {
-                tripStage(study, state, stage, segmentStart + best.tau, pushEvent);
+                tripStage(study, state, stage, segmentStart + tauClamped, pushEvent);
               }
             } });
           }
@@ -458,6 +463,21 @@ export function computeUnderfrequencyTimeline(
       return a.phase - b.phase;
     });
     const next = candidates[0];
+
+    // ---- Accumulate armed timer across this segment's duration ----
+    // U01 §9.3: "When a stage arms, its timer accumulates engineering time."
+    // The timer must carry across segment boundaries — a saturation crossing or
+    // disturbance step splits the segment, but the elapsed armed time does not
+    // reset. Advance every armed stage's timer by the segment duration (next.tau)
+    // so that tauTrip = timeDelaySec - elapsed measures from the original arming
+    // instant, not the current segment start. (UFR-FIX-01)
+    if (next && next.tau >= 0 && state.timers.size > 0 && state.armedIds.size > 0) {
+      const accumulated = new Map<string, number>();
+      for (const [stageId, elapsed] of state.timers) {
+        accumulated.set(stageId, elapsed + (state.armedIds.has(stageId) ? next.tau : 0));
+      }
+      state.timers = accumulated;
+    }
 
     const settled =
       params.collapsing

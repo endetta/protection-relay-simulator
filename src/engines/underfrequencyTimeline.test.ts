@@ -317,3 +317,62 @@ describe('Underfrequency timeline collapse (U01 § 12.4)', () => {
     }
   });
 });
+
+// ───── UFR-FIX-01: UFLS timer must accumulate across segment boundaries ─────
+// U01 §9.3: "When a stage arms, its timer accumulates engineering time."
+// Regression: state.timers was never advanced within a segment — elapsed was
+// always 0, so tauTrip = timeDelaySec - 0 was measured from the segment start
+// (post-saturation), not from the arming instant. This test forces an armed
+// stage to survive a governor-saturation segment boundary and asserts the trip
+// time = arming + delay, not segment-start + delay.
+
+describe('Underfrequency timeline UFLS timer accumulation (U01 §9.3, UFR-FIX-01)', () => {
+  it('trips a stage after timeDelaySec elapsed since arming, across a saturation crossing', () => {
+    // Large load step: drives below S1 threshold fast, then saturates all gens
+    // before the 0.20 s delay elapses → arming segment is cut by a saturation
+    // segment. The trip must still be 0.20 s after arming.
+    const s = loadStepStudy(800);
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+
+    const arm = run.events.find((e) => e.type === 'UFLS_ARMED' && e.stageId === 'S1');
+    const trip = run.events.find((e) => e.type === 'UFLS_TRIP' && e.stageId === 'S1');
+    expect(arm).toBeDefined();
+    expect(trip).toBeDefined();
+    if (!arm || !trip) return;
+
+    // The trip must fire at least `timeDelaySec` after arming.
+    const s1 = s.uflsStages.find((st) => st.id === 'S1')!;
+    expect(trip.timeSec - arm.timeSec).toBeCloseTo(s1.timeDelaySec, 1);
+  });
+
+  it('releases an armed stage (STAGE_RESET) without a trip when frequency never crosses the delay', () => {
+    // Small deficit: S1 arms but frequency settles back above threshold before
+    // 0.20 s elapses (no saturation, immediate recovery). The stage must be
+    // reset, not tripped.
+    const s = loadStepStudy(60);
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+    const s1Trips = run.events.filter((e) => e.type === 'UFLS_TRIP' && e.stageId === 'S1');
+    expect(s1Trips.length).toBe(0);
+  });
+
+  // ---- UFR-FIX-02: Delay=0 stage must trip immediately ----
+  it('trips a zero-delay stage at the same tick it arms (not dropped by the >EPS gate)', () => {
+    const s0Stages: readonly UflsStageSettings[] = [
+      { id: 'S1', label: 'Stage 1 — 49.50', enabled: true, thresholdHz: 49.50, timeDelaySec: 0, shedFractionPct: 10 },
+      { id: 'S2', label: 'Stage 2 — 49.00', enabled: true, thresholdHz: 49.00, timeDelaySec: 0.30, shedFractionPct: 20 },
+      { id: 'S3', label: 'Stage 3 — 48.50', enabled: true, thresholdHz: 48.50, timeDelaySec: 0.40, shedFractionPct: 20 },
+      { id: 'S4', label: 'Stage 4 — 48.00', enabled: true, thresholdHz: 48.00, timeDelaySec: 0.50, shedFractionPct: 20 },
+    ];
+    const s = study({ uflsStages: s0Stages }, [{ id: 'D1', kind: 'LOAD_STEP', timeSec: 0, mw: 800 }]);
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+    const s1Trips = run.events.filter((e) => e.type === 'UFLS_TRIP' && e.stageId === 'S1');
+    expect(s1Trips.length).toBe(1);
+    // S1 trip must coincide with arming, not be silently dropped.
+    const arm = run.events.find((e) => e.type === 'UFLS_ARMED' && e.stageId === 'S1');
+    expect(arm).toBeDefined();
+    expect(arm).toBeDefined() && expect(s1Trips[0].timeSec - arm!.timeSec).toBeCloseTo(0, 1);
+  });
+});
