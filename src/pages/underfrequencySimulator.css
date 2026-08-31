@@ -38,6 +38,134 @@
   line-height: 1.4;
 }
 
+/* ─────────── Global playback bar (D7) ─────────── */
+.underfrequency-playback {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: var(--sim-panel-raised);
+  padding: 7px 9px;
+}
+
+.underfrequency-playback-buttons {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.underfrequency-playback-buttons .underfrequency-action-button {
+  padding: 5px 11px;
+  font-size: 12px;
+}
+
+.underfrequency-speed {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.underfrequency-speed button {
+  border: 1px solid var(--sim-border);
+  border-radius: 5px;
+  background: transparent;
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--sim-text-secondary);
+  cursor: pointer;
+}
+
+.underfrequency-speed button:hover { border-color: var(--sim-accent); color: var(--sim-accent); }
+.underfrequency-speed button[data-active='true'] {
+  background: var(--sim-accent);
+  border-color: var(--sim-accent);
+  color: #fff;
+}
+
+.underfrequency-scrub {
+  display: grid;
+  grid-template-columns: minmax(80px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.underfrequency-scrub input[type='range'] {
+  min-width: 0;
+  accent-color: var(--sim-accent);
+}
+.underfrequency-scrub input[type='range']:disabled { opacity: .45; }
+
+.underfrequency-scrub-readout {
+  font-size: 11px;
+  color: var(--sim-text-secondary);
+  white-space: nowrap;
+}
+
+.underfrequency-run-status {
+  display: grid;
+  gap: 1px;
+  white-space: nowrap;
+  border-left: 1px solid var(--sim-border);
+  padding-left: 10px;
+}
+.underfrequency-run-status > span {
+  font-size: 9px;
+  letter-spacing: .07em;
+  color: var(--sim-text-muted);
+}
+.underfrequency-run-status b {
+  font-size: 11px;
+  color: var(--sim-text-secondary);
+}
+.underfrequency-run-status[data-state='running'] b { color: var(--sim-accent); }
+.underfrequency-run-status[data-state='complete'] b { color: var(--sim-green); }
+.underfrequency-run-status[data-state='invalid'] b { color: var(--sim-red); }
+
+/* ─────────── View tabs (D5) ─────────── */
+.underfrequency-view-tabs {
+  display: inline-flex;
+  gap: 2px;
+  border: 1px solid var(--sim-border);
+  border-radius: 8px;
+  background: var(--sim-panel-raised);
+  padding: 3px;
+  width: fit-content;
+}
+
+.underfrequency-view-tabs button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sim-text-secondary);
+  cursor: pointer;
+}
+.underfrequency-view-tabs button[data-active='true'] {
+  background: var(--sim-accent);
+  color: #fff;
+}
+
+/* ─────────── View panel (SLD full / Curve full / Split 50-50) ─────────── */
+.underfrequency-view-panel {
+  display: grid;
+  gap: 10px;
+}
+.underfrequency-split {
+  display: grid;
+  gap: 10px;
+}
+@media (min-width: 900px) {
+  .underfrequency-split {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .underfrequency-page-invalid b {
   color: var(--sim-amber);
   font-size: 11px;
