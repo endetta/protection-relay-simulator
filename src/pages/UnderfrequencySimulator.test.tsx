@@ -17,12 +17,15 @@ describe('Underfrequency (81U) page / route integration contracts', () => {
     expect(markup).toContain('Parameter');
     expect(markup).toContain('Simulasi Langsung');
     expect(markup).toContain('Analisis');
-    // Live column hero chart + the two response cards.
-    expect(markup).toContain('Frequency — Time');
+    // Default live view is the SLD (D1); Generator/Load cards remain shared.
+    expect(markup).toContain('Diagram satu garis');
     expect(markup).toContain('Generator Diagram');
     expect(markup).toContain('Load Shedding');
     // The default preset is UFR-01 Nominal — balanced, no disturbance.
     expect(markup).toContain('Operasi Nominal');
+    // Global playback bar + view tabs above the panel.
+    expect(markup).toContain('role="tablist"');
+    expect(markup).toContain('aria-label="Kontrol pemutaran simulasi global"');
   });
 
   it('keeps the shared Home control and module-specific header identity', () => {

@@ -2,23 +2,30 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { computeUnderfrequencyTimeline } from '../../engines/underfrequencyTimeline';
 import { getUnderfrequencyStudyPreset } from '../../studies/underfrequencyPresets';
-import { studyFromPreset, type UnderfrequencyAction } from '../../utils/underfrequencyState';
+import { studyFromPreset } from '../../utils/underfrequencyState';
 import type { UnderfrequencyStudyDefinition } from '../../types/underfrequency';
 import { FrequencyTimelineChart } from './FrequencyTimelineChart';
 
-const noopDispatch = (_action: UnderfrequencyAction) => undefined;
-
-function renderChart(presetId: string, playbackState: string = 'COMPLETE'): string {
+function renderChart(presetId: string, scrubTimeSec: number | null = null): string {
   const preset = getUnderfrequencyStudyPreset(presetId);
   const study: UnderfrequencyStudyDefinition = studyFromPreset(preset);
   const run = computeUnderfrequencyTimeline(study);
+  // Resolve the visible snapshot the way the page does (snapshotAtTime semantics).
+  const visibleSnapshot =
+    run.status === 'VALID' && run.snapshots.length > 0
+      ? scrubTimeSec === null
+        ? run.snapshots[run.snapshots.length - 1]
+        : run.snapshots.reduce((best, s) =>
+            Math.abs(s.engineeringTimeSec - (scrubTimeSec ?? 0)) < Math.abs(best.engineeringTimeSec - (scrubTimeSec ?? 0)) ? s : best,
+            run.snapshots[0],
+          )
+      : null;
   return renderToStaticMarkup(
     <FrequencyTimelineChart
       run={run}
       study={study}
-      playbackState={playbackState}
-      simulationSpeed={1}
-      dispatch={noopDispatch}
+      scrubTimeSec={scrubTimeSec}
+      visibleSnapshot={visibleSnapshot}
     />,
   );
 }
@@ -30,9 +37,8 @@ function renderChartWithoutRun(presetId: string): string {
     <FrequencyTimelineChart
       run={null}
       study={study}
-      playbackState='IDLE'
-      simulationSpeed={1}
-      dispatch={noopDispatch}
+      scrubTimeSec={null}
+      visibleSnapshot={null}
     />,
   );
 }
@@ -53,22 +59,32 @@ describe('UFR Frequency — Time chart', () => {
     expect(markup).not.toMatch(/(?:NaN|Infinity)/);
   });
 
-  it('renders the readout, legend, and Playback controls including speed and scrub', () => {
+  it('renders the readout and legend (playback bar lives at the page level now)', () => {
     const markup = renderChart('UFR-02');
     expect(markup).toContain('f NOW');
     expect(markup).toContain('MIN f');
     expect(markup).toContain('STEADY');
     expect(markup).toContain('UFLS threshold');
     expect(markup).toContain('UFLS trip');
-    expect(markup).toContain('aria-label="Kontrol playback Underfrequency"');
-    expect(markup).toContain('aria-label="Playback speed"');
-    expect(markup).toContain('aria-label="Geser timeline underfrequency"');
+    // Playback controls moved to the global page-level bar in Phase 3.
+    expect(markup).not.toContain('aria-label="Kontrol playback Underfrequency"');
+    expect(markup).not.toContain('aria-label="Geser timeline underfrequency"');
   });
 
-  it('renders story-mode steps and a Story toggle in the header', () => {
+  it('does NOT render Story-mode controls (removed in Phase 3)', () => {
     const markup = renderChart('UFR-02');
-    expect(markup).toContain('Story');
-    expect(markup).toContain('aria-pressed="false"');
+    expect(markup).not.toContain('Story');
+    expect(markup).not.toContain('Langkah fase story');
+  });
+
+  it('renders a scrub crosshair when a scrub time is provided', () => {
+    const markup = renderChart('UFR-02', 1);
+    expect(markup).toContain('underfrequency-ftc-scrub-crosshair');
+  });
+
+  it('does not render a scrub crosshair when scrub time is null', () => {
+    const markup = renderChart('UFR-02', null);
+    expect(markup).not.toContain('underfrequency-ftc-scrub-crosshair');
   });
 
   it('holds the graph when no run is provided rather than crashing', () => {

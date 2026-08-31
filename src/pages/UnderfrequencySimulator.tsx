@@ -6,9 +6,13 @@ import { GeneratorDiagram } from '../components/underfrequency/GeneratorDiagram'
 import { SheddingChart } from '../components/underfrequency/SheddingChart';
 import { UnderfrequencyAnalysisPanel } from '../components/underfrequency/UnderfrequencyAnalysisPanel';
 import { UnderfrequencyParameterPanel } from '../components/underfrequency/UnderfrequencyParameterPanel';
+import { UnderfrequencySld } from '../components/underfrequency/UnderfrequencySld';
 import { SimulatorLayout } from '../layouts/SimulatorLayout';
 import { buildUnderfrequencyAnalysisModel, type UnderfrequencyTone } from '../presentation/underfrequencyAnalysis';
+import { buildUnderfrequencySldModel } from '../presentation/underfrequencySld';
+import { snapshotAtTime } from '../presentation/underfrequencyTimelineChart';
 import { computeUnderfrequencyTimeline } from '../engines/underfrequencyTimeline';
+import { useUnderfrequencyPlayback } from './underfrequencyPlayback';
 import type {
   UnderfrequencyTimelineSnapshot,
 } from '../types/underfrequency';
@@ -16,7 +20,7 @@ import {
   createInitialUnderfrequencyState,
   underfrequencyReducer,
 } from '../utils/underfrequencyState';
-import { evaluateActiveUnderfrequency } from '../utils/evaluateUnderfrequencyParameters';
+import { evaluateActiveUnderfrequency, canBeginUnderfrequencyRun } from '../utils/evaluateUnderfrequencyParameters';
 import './underfrequencySimulator.css';
 
 function headerTone(tone: UnderfrequencyTone): SimulatorHeaderTone {
@@ -33,10 +37,11 @@ export function UnderfrequencySimulator() {
     undefined,
     createInitialUnderfrequencyState,
   );
-  const [timelineSnapshot, setTimelineSnapshot] = useState<UnderfrequencyTimelineSnapshot | null>(null);
   const [parameterDraftValid, setParameterDraftValid] = useState(true);
   const [helpOpen, setHelpOpen] = useState(false);
   const [syncKey, setSyncKey] = useState(0);
+  // View mode: UI preference, not engineering state (D1/D5).
+  const [viewMode, setViewMode] = useState<'sld' | 'curve' | 'split'>('sld');
   // Step-guide focus: Langkah 1 (Parameters) is focused on load; other columns
   // are softly dimmed but never locked. null -> "Show all" clears the focus.
   const [focusStep, setFocusStep] = useState<string | null>('sim-parameters');
@@ -89,13 +94,30 @@ export function UnderfrequencySimulator() {
     [state, staticResult, run],
   );
 
-  const handleSnapshotChange = useCallback((snapshot: UnderfrequencyTimelineSnapshot | null) => {
-    setTimelineSnapshot(snapshot);
-  }, []);
+  // Page-level playback clock: one scrubTimeSec in the reducer, one snapshot
+  // resolution here — every consumer (SLD, chart, generator diagram) renders
+  // from the same visible snapshot, so views stay synchronized.
+  const totalTimeSec = run?.finalTimeSec ?? 0;
+  useUnderfrequencyPlayback({
+    playbackState: state.playbackState,
+    simulationSpeed: state.simulationSpeed,
+    totalTimeSec,
+    scrubTimeSec: state.scrubTimeSec,
+    dispatch,
+  });
+
+  const visibleSnapshot: UnderfrequencyTimelineSnapshot | null = useMemo(() => {
+    if (!run || run.status !== 'VALID' || run.snapshots.length === 0) return null;
+    return snapshotAtTime(run.snapshots, state.scrubTimeSec);
+  }, [run, state.scrubTimeSec]);
+
+  const sldModel = useMemo(
+    () => buildUnderfrequencySldModel(state.study, visibleSnapshot, run),
+    [state.study, visibleSnapshot, run],
+  );
 
   const reset = useCallback(() => {
     dispatch({ type: 'RESET' });
-    setTimelineSnapshot(null);
     setParameterDraftValid(true);
     setSyncKey((key) => key + 1);
   }, []);
@@ -122,6 +144,142 @@ export function UnderfrequencySimulator() {
     />
   );
 
+  const playbackDisabled = !parameterDraftValid || !canBeginUnderfrequencyRun(state);
+  const isRunning = state.playbackState === 'RUNNING';
+  const isPaused = state.playbackState === 'PAUSED';
+  const canScrub = run?.status === 'VALID' && run.snapshots.length > 0 && totalTimeSec > 0;
+  const scrubValue = state.scrubTimeSec ?? 0;
+
+  const playbackBar = (
+    <div className='underfrequency-playback' role='group' aria-label='Kontrol pemutaran simulasi global'>
+      <div className='underfrequency-playback-buttons'>
+        {isRunning ? (
+          <button
+            type='button'
+            className='underfrequency-action-button'
+            aria-label='Jeda pemutaran'
+            onClick={() => dispatch({ type: 'SET_PLAYBACK_STATE', playbackState: 'PAUSED' })}
+          >
+            Pause
+          </button>
+        ) : isPaused ? (
+          <button
+            type='button'
+            className='underfrequency-action-button'
+            aria-label='Lanjutkan pemutaran'
+            onClick={() => dispatch({ type: 'SET_PLAYBACK_STATE', playbackState: 'RUNNING' })}
+          >
+            Resume
+          </button>
+        ) : (
+          <button
+            type='button'
+            className='underfrequency-action-button'
+            data-tone='primary'
+            disabled={playbackDisabled}
+            aria-label='Mulai engineering run'
+            onClick={() => dispatch({ type: 'BEGIN_RUN' })}
+          >
+            Run
+          </button>
+        )}
+        <button
+          type='button'
+          className='underfrequency-action-button'
+          disabled={state.playbackState === 'IDLE'}
+          aria-label='Bersihkan run'
+          onClick={() => dispatch({ type: 'CLEAR_RUN' })}
+        >
+          Clear
+        </button>
+      </div>
+
+      <div className='underfrequency-speed' role='group' aria-label='Kecepatan pemutaran'>
+        {([1, 5, 10] as const).map((speed) => (
+          <button
+            key={speed}
+            type='button'
+            aria-pressed={state.simulationSpeed === speed}
+            aria-label={`Set kecepatan ${speed}×`}
+            data-active={state.simulationSpeed === speed ? 'true' : 'false'}
+            onClick={() => dispatch({ type: 'SET_SIMULATION_SPEED', speed })}
+          >
+            {speed}×
+          </button>
+        ))}
+      </div>
+
+      <div className='underfrequency-scrub'>
+        <input
+          type='range'
+          min={0}
+          max={totalTimeSec > 0 ? totalTimeSec : 1}
+          step={0.01}
+          value={canScrub ? scrubValue : 0}
+          disabled={!canScrub}
+          aria-label='Geser waktu simulasi'
+          onChange={(e) => dispatch({ type: 'SET_SCRUB_TIME', timeSec: Number.parseFloat(e.target.value) })}
+        />
+        <span className='underfrequency-scrub-readout font-eng'>
+          {scrubValue.toFixed(2)}s / {totalTimeSec.toFixed(2)}s
+        </span>
+      </div>
+
+      <div
+        className='underfrequency-run-status'
+        role='status'
+        aria-live='polite'
+        aria-atomic='true'
+        data-state={!parameterDraftValid ? 'invalid' : state.playbackState.toLowerCase()}
+      >
+        <span>Run</span>
+        <b>{!parameterDraftValid ? 'INPUT INVALID · OUTPUT HELD' : state.playbackState}</b>
+      </div>
+    </div>
+  );
+
+  const viewTabs = (
+    <div className='underfrequency-view-tabs' role='tablist' aria-label='Mode tampilan simulasi'>
+      {(['sld', 'curve', 'split'] as const).map((mode) => (
+        <button
+          key={mode}
+          type='button'
+          role='tab'
+          id={`underfrequency-tab-${mode}`}
+          aria-selected={viewMode === mode}
+          aria-controls='underfrequency-view-panel'
+          data-active={viewMode === mode ? 'true' : 'false'}
+          onClick={() => setViewMode(mode)}
+        >
+          {mode === 'sld' ? 'SLD' : mode === 'curve' ? 'Curve' : 'Split'}
+        </button>
+      ))}
+    </div>
+  );
+
+  const sldView = <UnderfrequencySld model={sldModel} />;
+  const curveView = (
+    <FrequencyTimelineChart
+      run={run}
+      study={state.study}
+      scrubTimeSec={state.scrubTimeSec}
+      visibleSnapshot={visibleSnapshot}
+    />
+  );
+
+  const viewPanel = (
+    <div id='underfrequency-view-panel' role='tabpanel' aria-labelledby={`underfrequency-tab-${viewMode}`} className='underfrequency-view-panel'>
+      {viewMode === 'sld' && sldView}
+      {viewMode === 'curve' && curveView}
+      {viewMode === 'split' && (
+        <div className='underfrequency-split'>
+          {sldView}
+          {curveView}
+        </div>
+      )}
+    </div>
+  );
+
   const simulation = (
     <div className='underfrequency-live-stack'>
       {!parameterDraftValid && (
@@ -130,16 +288,11 @@ export function UnderfrequencySimulator() {
           <span>Perbaiki draf parameter yang disorot sebelum memulai engineering run.</span>
         </div>
       )}
-      <FrequencyTimelineChart
-        run={run}
-        study={state.study}
-        playbackState={state.playbackState}
-        simulationSpeed={state.simulationSpeed}
-        dispatch={dispatch}
-        onSnapshotChange={handleSnapshotChange}
-      />
+      {playbackBar}
+      {viewTabs}
+      {viewPanel}
       <div className='underfrequency-live-cards'>
-        <GeneratorDiagram snapshot={timelineSnapshot} study={state.study} />
+        <GeneratorDiagram snapshot={visibleSnapshot} study={state.study} />
         <SheddingChart
           uflsStages={state.study.uflsStages}
           baseLoadMw={state.study.system.baseLoadMw}
