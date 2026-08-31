@@ -113,7 +113,8 @@ export function buildUnderfrequencySldModel(
         poles: g.poles,
       }));
 
-  const collapse = run?.steadyStateStatus === 'COLLAPSE';
+  // COLLAPSE must not leak into IDLE (pre-run) state — spec U01 §7.
+  const collapse = snapshot !== null && run?.steadyStateStatus === 'COLLAPSE';
 
   // Bus tone is derived from snapshot state, never from hard-coded thresholds.
   const anyOperated = snapshot ? snapshot.operatedStageIds.length > 0 : false;
