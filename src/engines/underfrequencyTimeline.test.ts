@@ -372,7 +372,48 @@ describe('Underfrequency timeline UFLS timer accumulation (U01 §9.3, UFR-FIX-01
     expect(s1Trips.length).toBe(1);
     // S1 trip must coincide with arming, not be silently dropped.
     const arm = run.events.find((e) => e.type === 'UFLS_ARMED' && e.stageId === 'S1');
-    expect(arm).toBeDefined();
-    expect(arm).toBeDefined() && expect(s1Trips[0].timeSec - arm!.timeSec).toBeCloseTo(0, 1);
+    expect(arm, 'S1 arm event should exist').toBeDefined();
+    expect(arm, 'S1 should trip at arming instant for Delay=0').toBeDefined();
+    expect(s1Trips[0].timeSec - arm!.timeSec).toBeCloseTo(0, 1);
+  });
+});
+
+// ─────────────── UFR-FIX-03: GENERATOR_BLOCK stays online, clamps headroom ──────
+describe('Underfrequency timeline GENERATOR_BLOCK semantics (U01 §6.1, UFR-FIX-03)', () => {
+  it('keeps the generator online with clamped headroom, deficit increases by (initialMw - mw) not initialMw', () => {
+    // G1 initialMw = 500. BLOCK to mw = 300 → deficit +200, G1 stays online.
+    const s = study(
+      {},
+      [{ id: 'D1', kind: 'GENERATOR_BLOCK', timeSec: 0, generatorId: 'G1', mw: 300 }],
+    );
+    const run = computeUnderfrequencyTimeline(s);
+    expect(run.status).toBe('VALID');
+
+    const g1After = run.snapshots[run.snapshots.length - 1].generators.find((g) => g.generatorId === 'G1');
+    // G1 must be online (ONLINE or AT_GOVERNOR_LIMIT), NOT TRIPPED.
+    expect(g1After).toBeDefined();
+    expect(g1After!.status).not.toBe('TRIPPED');
+
+    // At t=0 (pre-dynamics snapshot) deficit must reflect: baseline 0 + (500 - 300) = 200.
+    const snap0 = run.snapshots[0];
+    expect(snap0.engineeringTimeSec).toBeCloseTo(0, 9);
+    expect(snap0.deficitMw).toBeCloseTo(200, 6);
+
+    // The disturbance event is a DISTURBANCE_APPLIED referencing G1.
+    expect(run.events.some((e) => e.type === 'DISTURBANCE_APPLIED' && e.generatorId === 'G1')).toBe(true);
+  });
+
+  it('does NOT remove the generator from the online set (contrast with GENERATOR_LOSS)', () => {
+    const block = study({}, [{ id: 'DB', kind: 'GENERATOR_BLOCK', timeSec: 0, generatorId: 'G1', mw: 300 }]);
+    const loss = study({}, [{ id: 'DL', kind: 'GENERATOR_LOSS', timeSec: 0, generatorId: 'G1' }]);
+    const rb = computeUnderfrequencyTimeline(block);
+    const rl = computeUnderfrequencyTimeline(loss);
+    const g1Snap = rb.snapshots[0];
+    const g1SnapLoss = rl.snapshots[0];
+    const blockG1 = g1Snap.generators.find((g) => g.generatorId === 'G1');
+    const lossG1 = g1SnapLoss.generators.find((g) => g.generatorId === 'G1');
+    // BLOCK: online; LOSS: tripped.
+    expect(blockG1!.status).not.toBe('TRIPPED');
+    expect(lossG1!.status).toBe('TRIPPED');
   });
 });
