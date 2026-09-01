@@ -67,6 +67,7 @@ This repository uses Git + GitHub as the source of truth. There is always a save
 - **Push each commit to GitHub.** After committing, run `git push` so the state is always saved remotely and recoverable. Do not leave work only on the local machine.
 - **Never lose work or status.** Keeping commits + pushes current means we can always revert to a known-good point. If a change turns out wrong, revert via git rather than manually un-doing it.
 - **One logical change per commit.** Co-locate related edits; separate cleanups (e.g. gitignore, config) from feature work.
+- **PR merge without review (work/* → main).** `gh pr merge --squash --delete-branch` into `main` is permitted with `Bash(gh pr merge:*)` in `.claude/settings.local.json` **and** the explicit user phrase "tanpa review" ("without review"). The phrase is required per-merge by the classifier stage-2 "Merge Without Review" rule (tested: without the phrase, `gh pr merge` stays denied even with the allowlist rule). The phrase is a one-time safety signal, not a repeated review gate.
 - **No secrets.** Never commit keys, tokens, or credentials.
 
 Local settings that must stay out of the repo (already gitignored): `.claude/settings.local.json` is machine-local and auto-modified per session — never stage it.
