@@ -157,8 +157,9 @@ describe('useUnderfrequencyPlayback dispatch model (no rAF, no DOM)', () => {
     expect(dispatched.every((d) => d.type === 'SET_SCRUB_TIME')).toBe(true);
   });
 
-  it('never dispatches the same scrub value twice (no churn)', () => {
-    // Frame 1: null → 1. Frames 2 & 3 advance by 0.5 each.
+  it('never dispatches the same scrub value twice across 1s / 0.5s deltas (no churn)', () => {
+    // Frame 1: null → 1. Frames 2 & 3 advance by 0.5 each. None of the three
+    // produced values should be duplicated.
     const dispatched = simulateRun({
       totalTimeSec: 100,
       simulationSpeed: 1,
@@ -201,5 +202,28 @@ describe('useUnderfrequencyPlayback dispatch model (no rAF, no DOM)', () => {
     const complete = dispatched.find((d) => d.type === 'SET_PLAYBACK_STATE');
     expect(scrub).toHaveLength(1); // only the first-frame advance survived the gate
     expect(complete).toBeUndefined();
+  });
+
+  it('sub-µs wall deltas do not stall the run via repeated no-op dispatch attempts', () => {
+    // Regression for the FP-rounding stall (documented in the playback hook
+    // reconciliation memory). When a frame's wallDeltaSec is so small that
+    // `current + wallDeltaSec * speed` rounds to exactly `current` in IEEE-754,
+    // shouldDispatchScrub returns false and no SET_SCRUB_TIME is emitted — but
+    // the next frame must still be able to advance. Six 1e-9 s deltas at
+    // speed 1 = 6e-9 s, which still rounds to 0 in double precision, so the
+    // first frame does NOT dispatch (next === current === null → not in the
+    // dispatch path either; shouldDispatchScrub(null, null) === false). Once a
+    // real delta arrives, the run resumes normally.
+    const dispatched = simulateRun({
+      totalTimeSec: 100,
+      simulationSpeed: 1,
+      wallDeltaSecs: [1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 0.5],
+    });
+    const scrubs = dispatched.filter((d) => d.type === 'SET_SCRUB_TIME').map((d) => d.timeSec);
+    // The first six sub-µs frames produce no dispatch (next rounds to current).
+    // The seventh frame (0.5s) is the first real advance: null → 0.5.
+    expect(scrubs).toEqual([0.5]);
+    // No COMPLETE: 0.5 < 100, run continues.
+    expect(dispatched.find((d) => d.type === 'SET_PLAYBACK_STATE')).toBeUndefined();
   });
 });

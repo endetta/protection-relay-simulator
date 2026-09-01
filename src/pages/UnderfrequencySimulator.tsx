@@ -148,15 +148,19 @@ export function UnderfrequencySimulator() {
   const isRunning = state.playbackState === 'RUNNING';
   const isPaused = state.playbackState === 'PAUSED';
   const canScrub = run?.status === 'VALID' && run.snapshots.length > 0 && totalTimeSec > 0;
-  const scrubValue = state.scrubTimeSec ?? 0;
+  // Slider thumb tracks the visible snapshot: null scrub means "show the last
+  // snapshot" (snapshotAtTime semantics), so the thumb sits at the end.  This
+  // keeps the slider and the view in sync at IDLE / after CLEAR_RUN.
+  const scrubValue = state.scrubTimeSec ?? totalTimeSec;
 
   const playbackBar = (
     <div className='underfrequency-playback' role='group' aria-label='Kontrol pemutaran simulasi global'>
       <div className='underfrequency-playback-buttons'>
         {isRunning ? (
-          <button
+<button
             type='button'
             className='underfrequency-action-button'
+            disabled={!parameterDraftValid}
             aria-label='Jeda pemutaran'
             onClick={() => dispatch({ type: 'SET_PLAYBACK_STATE', playbackState: 'PAUSED' })}
           >
@@ -166,6 +170,7 @@ export function UnderfrequencySimulator() {
           <button
             type='button'
             className='underfrequency-action-button'
+            disabled={!parameterDraftValid}
             aria-label='Lanjutkan pemutaran'
             onClick={() => dispatch({ type: 'SET_PLAYBACK_STATE', playbackState: 'RUNNING' })}
           >
@@ -186,7 +191,7 @@ export function UnderfrequencySimulator() {
         <button
           type='button'
           className='underfrequency-action-button'
-          disabled={state.playbackState === 'IDLE'}
+          disabled={state.playbackState === 'IDLE' || !parameterDraftValid}
           aria-label='Bersihkan run'
           onClick={() => dispatch({ type: 'CLEAR_RUN' })}
         >
@@ -199,6 +204,7 @@ export function UnderfrequencySimulator() {
           <button
             key={speed}
             type='button'
+            disabled={!parameterDraftValid}
             aria-pressed={state.simulationSpeed === speed}
             aria-label={`Set kecepatan ${speed}×`}
             data-active={state.simulationSpeed === speed ? 'true' : 'false'}
