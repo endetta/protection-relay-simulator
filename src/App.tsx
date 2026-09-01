@@ -3,7 +3,6 @@ import { AppShell } from './layouts/AppShell';
 import { SimulatorHome } from './pages/SimulatorHome';
 import { DifferentialSimulator } from './pages/DifferentialSimulator';
 import { OvercurrentSimulator } from './pages/OvercurrentSimulator';
-import { DistanceSimulator } from './pages/DistanceSimulator';
 import { UnderfrequencySimulator } from './pages/UnderfrequencySimulator';
 
 export default function App() {
@@ -14,7 +13,6 @@ export default function App() {
           <Route index element={<SimulatorHome />} />
           <Route path="simulator/differential" element={<DifferentialSimulator />} />
           <Route path="simulator/overcurrent" element={<OvercurrentSimulator />} />
-          <Route path="simulator/distance" element={<DistanceSimulator />} />
           <Route path="simulator/underfrequency" element={<UnderfrequencySimulator />} />
         </Route>
       </Routes>
