@@ -1069,7 +1069,13 @@ export function evaluateOvercurrentTimelineFrame(
     }
 
     const requestedPlaybackState = frame.playbackState ?? 'RUNNING';
-    const playbackState: OvercurrentPlaybackState = engineeringTimeSec >= endTimeSec
+    // COMPLETE is the terminal state of the projected timeline; honour it
+    // whenever the requested engineering time is at-or-before the deterministic
+    // end (within the TIME_EPS_FACTOR tolerance shared with other comparisons).
+    // A mid-timeline COMPLETE request — engineeringTimeSec well below endTimeSec
+    // — stays RUNNING so the playback hook can advance to the end.
+    const atOrPastEnd = !beforeTime(engineeringTimeSec, endTimeSec);
+    const playbackState: OvercurrentPlaybackState = atOrPastEnd
       ? 'COMPLETE'
       : requestedPlaybackState === 'COMPLETE'
         ? 'RUNNING'
