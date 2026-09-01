@@ -184,4 +184,22 @@ describe('useUnderfrequencyPlayback dispatch model (no rAF, no DOM)', () => {
     expect(dispatched.find((d) => d.type === 'SET_SCRUB_TIME')).toBeUndefined();
     expect(dispatched.find((d) => d.type === 'SET_PLAYBACK_STATE')).toBeUndefined();
   });
+
+  it('a gate-suppressed SET_SCRUB_TIME does NOT cause a stray COMPLETE', () => {
+    // Regression for the gate coverage gap: if shouldDispatchScrub returns
+    // false (no scrub advance), the dispatch is suppressed, scrub stays at
+    // its previous value, and the COMPLETE latch must NOT fire — even when
+    // totalTimeSec is small enough to be reached in principle. Here the first
+    // frame dispatches (null → 1), then two zero-delta frames where the gate
+    // returns false (current = next = 1). Scrub stays at 1.0 < 5.0 → no latch.
+    const dispatched = simulateRun({
+      totalTimeSec: 5,
+      simulationSpeed: 1,
+      wallDeltaSecs: [1, 0, 0],
+    });
+    const scrub = dispatched.filter((d) => d.type === 'SET_SCRUB_TIME');
+    const complete = dispatched.find((d) => d.type === 'SET_PLAYBACK_STATE');
+    expect(scrub).toHaveLength(1); // only the first-frame advance survived the gate
+    expect(complete).toBeUndefined();
+  });
 });
