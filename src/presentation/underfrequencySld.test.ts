@@ -91,7 +91,7 @@ describe('underfrequencySld buildUnderfrequencySldModel', () => {
     expect(model.bus.tone).toBe('danger');
   });
 
-  it('tone is danger on COLLAPSE', () => {
+  it('tone is danger on COLLAPSE when snapshot exists (post-run)', () => {
     const model = buildUnderfrequencySldModel(
       STUDY,
       makeSnapshot({ frequencyHz: 47.2, operatedStageIds: ['S1', 'S2', 'S3', 'S4'] }),
@@ -99,6 +99,13 @@ describe('underfrequencySld buildUnderfrequencySldModel', () => {
     );
     expect(model.bus.tone).toBe('danger');
     expect(model.bus.collapse).toBe(true);
+  });
+
+  it('does NOT leak COLLAPSE into IDLE when snapshot is null (pre-run)', () => {
+    const model = buildUnderfrequencySldModel(STUDY, null, makeRun({ steadyStateStatus: 'COLLAPSE' }));
+    expect(model.status).toBe('IDLE');
+    expect(model.bus.collapse).toBe(false);
+    expect(model.bus.tone).toBe('success');
   });
 
   it('does NOT shed block A when S1 alone operates (65 MW < 455 MW capacity)', () => {
