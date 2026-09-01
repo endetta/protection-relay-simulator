@@ -10,7 +10,7 @@ interface RelayModule {
 const RELAY_MODULES: RelayModule[] = [
   { id: 'overcurrent', label: 'Overcurrent Relay', path: '/simulator/overcurrent' },
   { id: 'differential', label: 'Differential Relay', path: '/simulator/differential' },
-  { id: 'distance', label: 'Distance Relay' },
+  { id: 'distance', label: 'Distance Relay', path: '/simulator/distance' },
   { id: 'underfrequency', label: 'Underfrequency Relay', path: '/simulator/underfrequency' },
 ];
 

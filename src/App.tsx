@@ -4,6 +4,7 @@ import { SimulatorHome } from './pages/SimulatorHome';
 import { DifferentialSimulator } from './pages/DifferentialSimulator';
 import { OvercurrentSimulator } from './pages/OvercurrentSimulator';
 import { UnderfrequencySimulator } from './pages/UnderfrequencySimulator';
+import { DistanceSimulator } from './pages/DistanceSimulator';
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="simulator/differential" element={<DifferentialSimulator />} />
           <Route path="simulator/overcurrent" element={<OvercurrentSimulator />} />
           <Route path="simulator/underfrequency" element={<UnderfrequencySimulator />} />
+          <Route path="simulator/distance" element={<DistanceSimulator />} />
         </Route>
       </Routes>
     </BrowserRouter>

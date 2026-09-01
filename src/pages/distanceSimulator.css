@@ -1,0 +1,45 @@
+.distance-simulator-page {
+  background: var(--sim-bg);
+  color: var(--sim-text);
+  font-family: var(--sim-font-ui);
+}
+
+.distance-parameter-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.distance-simulation-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.distance-page-invalid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border: 1px solid var(--sim-amber);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--sim-amber) 12%, transparent);
+  padding: 8px 10px;
+  color: var(--sim-amber);
+}
+
+.distance-page-invalid b {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.distance-page-invalid span {
+  font-size: 9px;
+  color: var(--sim-text-secondary);
+}
+
+.distance-help-overlay {
+  /* Overlay chrome is shared; nothing distance-specific yet. */
+}
