@@ -168,7 +168,8 @@ function buildOperatingOrder(
       if (at === null && bt !== null) return 1;
       if (at !== null && bt === null) return -1;
       if (at !== null && bt !== null && Math.abs(at - bt) > timeTolerance(at, bt)) return at - bt;
-      return a.deviceOrder - b.deviceOrder;
+      if (a.deviceOrder !== b.deviceOrder) return a.deviceOrder - b.deviceOrder;
+      return a.deviceId.localeCompare(b.deviceId);
     })
     .map(({ deviceOrder: _deviceOrder, ...entry }) => entry);
 }

@@ -4,6 +4,7 @@ import { calculateOvercurrentDevice } from './overcurrent';
 import {
   engineeringDeltaToWallClockSec,
   evaluateOvercurrentTimeline,
+  evaluateOvercurrentTimelineFrame,
 } from './overcurrentTimeline';
 import {
   COORD_02_THREE_RELAY_RADIAL,
@@ -525,5 +526,52 @@ describe('O07 external clear, safety, genericity, and playback separation', () =
     expect(engineeringDeltaToWallClockSec(10, 1)).toEqual({ status: 'VALID', value: 10 });
     expect(engineeringDeltaToWallClockSec(10, 5)).toEqual({ status: 'VALID', value: 2 });
     expect(engineeringDeltaToWallClockSec(10, 10)).toEqual({ status: 'VALID', value: 1 });
+  });
+});
+
+describe('O07 timeline frame COMPLETE tolerance', () => {
+  function frameValue(result: ReturnType<typeof evaluateOvercurrentTimelineFrame>) {
+    if (result.status !== 'VALID') throw new Error(`Expected VALID but got ${result.status}: ${result.issues?.map((i) => i.detail).join(', ')}`);
+    return result.value;
+  }
+
+  // 0.3s definite delay + 0.1s breaker clearing → engineeringTimeSec = 0.4
+  const relay = device('R1', 1, { delaySec: 0.3, breakerSec: 0.1 });
+  const definition = study({ devices: [relay], currents: { R1: 2000 } });
+  const timeline = runTimeline(definition);
+  const endTimeSec = timeline.engineeringTimeSec;
+
+  it('honors COMPLETE when engineeringTimeSec is within tolerance of endTimeSec', () => {
+    // endTimeSec - 1e-12 is within TIME_EPS_FACTOR (1e-10) tolerance of endTimeSec
+    const frame = frameValue(evaluateOvercurrentTimelineFrame({
+      study: definition,
+      faultCaseId: definition.faultCases[0].id,
+      playbackSpeed: 1,
+      engineeringTimeSec: endTimeSec - 1e-12,
+      playbackState: 'COMPLETE',
+    }));
+    expect(frame.playbackState).toBe('COMPLETE');
+  });
+
+  it('returns RUNNING when engineeringTimeSec is well below endTimeSec', () => {
+    const frame = frameValue(evaluateOvercurrentTimelineFrame({
+      study: definition,
+      faultCaseId: definition.faultCases[0].id,
+      playbackSpeed: 1,
+      engineeringTimeSec: 0.1,
+      playbackState: 'COMPLETE',
+    }));
+    expect(frame.playbackState).toBe('RUNNING');
+  });
+
+  it('returns COMPLETE at exact endTimeSec with COMPLETE request', () => {
+    const frame = frameValue(evaluateOvercurrentTimelineFrame({
+      study: definition,
+      faultCaseId: definition.faultCases[0].id,
+      playbackSpeed: 1,
+      engineeringTimeSec: endTimeSec,
+      playbackState: 'COMPLETE',
+    }));
+    expect(frame.playbackState).toBe('COMPLETE');
   });
 });

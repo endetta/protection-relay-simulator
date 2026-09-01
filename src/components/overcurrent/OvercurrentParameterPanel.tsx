@@ -270,7 +270,7 @@ function OvercurrentParameterPanelComponent({
         summary={(
           <SectionSummary columns={2} ariaLabel='Active Overcurrent study-current summary'>
             <SummaryMetric label='Active source' value={activeEvaluation.status === 'VALID' ? activeEvaluation.value.source?.label ?? 'None' : 'OUTPUT HELD'} tone={activeEvaluation.status === 'VALID' ? activeFaultSource ? 'danger' : 'success' : 'warning'} />
-            <SummaryMetric label={activeDeviceId ? `${activeDeviceId} current` : 'Current'} value={activePrimaryCurrent === undefined ? '—' : formatEngineeringNumber(activePrimaryCurrent)} unit={activePrimaryCurrent === undefined ? undefined : 'A primary'} />
+            <SummaryMetric label={`${activeDeviceId ? state.studyDefinition.devicesById[activeDeviceId]?.label ?? activeDeviceId : 'Active'} current`} value={activePrimaryCurrent === undefined ? '—' : formatEngineeringNumber(activePrimaryCurrent)} unit={activePrimaryCurrent === undefined ? undefined : 'A primary'} />
           </SectionSummary>
         )}
       >
