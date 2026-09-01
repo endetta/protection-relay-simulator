@@ -86,4 +86,50 @@ describe('O06 coordination engine', () => {
     expect(a.value.worstPoint?.locationId).toBe('F3');
     expect(a.value.worstPoint?.surplusSec).toBeLessThan(0);
   });
+
+  it('produces a deterministic operating-order tiebreaker for duplicate deviceOrder', () => {
+    // Coordination study with two devices sharing order=1, both with identical
+    // trip times. The tiebreaker must resolve to deviceId (alphabetical) for
+    // absolute determinism beyond the V8 stable-sort guarantee.
+    const study: OvercurrentStudyDefinition = {
+      id: 'TIE',
+      label: 'Tiebreak',
+      mode: 'COORDINATION_LAB',
+      guidance: 'FREE',
+      topology: { id: 'T', label: 't', kind: 'RADIAL_FEEDER', deviceIds: ['B', 'A'], locations: [] },
+      devicesById: {
+        A: { id: 'A', label: 'A', order: 1, kind: 'OVERCURRENT_50_51', settings: {
+          ct: { primaryRatedA: 1000, secondaryRatedA: 1, ratioErrorPct: 0 },
+          phase51: { enabled: true, pickupASecondary: 1, timingMode: 'DEFINITE', inverseCurveId: 'IEC_SI', timeScale: 0.1, definiteDelaySec: 0.5 },
+          phase50: { enabled: false, pickupASecondary: 10 },
+          breaker: { clearingTimeSec: 0.1 },
+        } },
+        B: { id: 'B', label: 'B', order: 1, kind: 'OVERCURRENT_50_51', settings: {
+          ct: { primaryRatedA: 1000, secondaryRatedA: 1, ratioErrorPct: 0 },
+          phase51: { enabled: true, pickupASecondary: 1, timingMode: 'DEFINITE', inverseCurveId: 'IEC_SI', timeScale: 0.1, definiteDelaySec: 0.5 },
+          phase50: { enabled: false, pickupASecondary: 10 },
+          breaker: { clearingTimeSec: 0.1 },
+        } },
+      },
+      currentProfiles: [],
+      faultCases: [{
+        id: 'F:1', label: 'f1', locationId: 'F', category: 'MAX', current: { kind: 'STATIC', primaryCurrentAByDevice: { A: 2000, B: 2000 } },
+        protectionChain: { primaryDeviceId: 'A', backupDeviceIds: ['B'] },
+      }],
+      loadCases: [],
+      faultLocationProfiles: [],
+      coordinationPairs: [],
+      coordinationRequirements: [],
+      validationCaseIds: [],
+      loadSecurityCaseIds: [],
+    };
+    const a = evaluateCoordinationFaultCase(study, 'F:1');
+    const b = evaluateCoordinationFaultCase(study, 'F:1');
+    expect(a.status).toBe('VALID');
+    if (a.status !== 'VALID') return;
+    const orderA = a.value.operatingOrder.map((entry) => entry.deviceId);
+    // Both trip at 0.5s; tiebreaker is deviceId alphabetical
+    expect(orderA).toEqual(['A', 'B']);
+    expect(a).toEqual(b);
+  });
 });
