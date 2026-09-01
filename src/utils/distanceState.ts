@@ -40,7 +40,7 @@ export type DistanceAction =
   | { readonly type: 'RESET' }
   | { readonly type: 'SET_TOPOLOGY'; readonly topology: DistanceTopologyId }
   | { readonly type: 'SET_SCHEME'; readonly scheme: DistanceSchemeType }
-  | { readonly type: 'SET_CHARACTERISTIC'; readonly characteristic: DistanceCharacteristicType }
+  | { readonly type: 'SET_CHARACTERISTIC_TYPE'; readonly characteristic: DistanceCharacteristicType }
   | { readonly type: 'SET_SYSTEM'; readonly patch: Partial<DistanceSystemData> }
   | { readonly type: 'SET_LINE'; readonly patch: Partial<DistanceStudyDefinition['line']> }
   | { readonly type: 'SET_FAULT_CURRENT_A'; readonly value: number }
@@ -147,8 +147,9 @@ export function distanceStateReducer(state: DistanceSimulatorState, action: Dist
       const nextStudy: DistanceStudyDefinition = { ...state.study, scheme: action.scheme };
       return flagModified(state, nextStudy);
     }
-    case 'SET_CHARACTERISTIC': {
-      const nextStudy: DistanceStudyDefinition = { ...state.study, settings: { ...state.study.settings, quadrilateral: { ...state.study.settings.quadrilateral } } };
+    case 'SET_CHARACTERISTIC_TYPE': {
+      const next: DistanceDeviceSettings = { ...state.study.settings, characteristicType: action.characteristic };
+      const nextStudy: DistanceStudyDefinition = { ...state.study, settings: next };
       return flagModified(state, nextStudy);
     }
     case 'SET_SYSTEM': {

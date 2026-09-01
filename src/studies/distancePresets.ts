@@ -16,6 +16,7 @@ import type {
   DistanceStudyPreset,
   DistanceStudyPresetId,
   DistanceSystemData,
+  DistanceVTConfiguration,
   DistanceZoneSettings,
 } from '../types/distance';
 import { validateDistanceDeviceSettings } from '../engines/distanceMeasurement';
@@ -28,10 +29,10 @@ const DEFAULT_ZONE3: DistanceZoneSettings = { enabled: true, reachOhmSecondary: 
 const DEFAULT_LOAD: DistanceLoadEncroachmentSettings = { enabled: true, rMinLoadOhmSecondary: 18, thetaLoadDeg: 25 };
 const DEFAULT_QUAD: DistanceQuadrilateralSettings = { zReachOhmSecondary: 28.0, k: 0.5, alphaDeg: 0, betaDeg: 80 };
 
-function baseSettings(overrides: Partial<DistanceDeviceSettings> = {}): DistanceDeviceSettings {
+function baseSettings(vt: DistanceVTConfiguration = VT_230, overrides: Partial<DistanceDeviceSettings> = {}): DistanceDeviceSettings {
   return {
     ct: { primaryRatedA: 1200, secondaryRatedA: 1, ratioErrorPct: 0 },
-    vt: { primaryRatedKv: 230, secondaryRatedV: 110, ratioErrorPct: 0 },
+    vt,
     characteristicType: 'MHO_CIRCLE',
     zone1: DEFAULT_ZONE1,
     zone2: DEFAULT_ZONE2,
@@ -47,6 +48,12 @@ function baseSettings(overrides: Partial<DistanceDeviceSettings> = {}): Distance
 const SYSTEM_230: DistanceSystemData = { vLLKvPrimary: 230, fHz: 50 };
 const SYSTEM_500: DistanceSystemData = { vLLKvPrimary: 500, fHz: 60 };
 const LINE_100KM: DistanceLineData = { lengthKm: 100, z1OhmPerKmPrimary: 0.38, z1AngleDeg: 80, z0OhmPerKmPrimary: 1.14 };
+
+// VT must track the system voltage. DIST-02 runs at 500 kV, so its VT is
+// 500 kV / 110 V (not the 230 kV / 110 V used elsewhere); otherwise the
+// secondary impedance is ~2.2× too large and no zone will ever trip.
+const VT_230: DistanceVTConfiguration = { primaryRatedKv: 230, secondaryRatedV: 110, ratioErrorPct: 0 };
+const VT_500: DistanceVTConfiguration = { primaryRatedKv: 500, secondaryRatedV: 110, ratioErrorPct: 0 };
 
 function preset(
   id: DistanceStudyPresetId,
@@ -97,7 +104,7 @@ export const DIST_01_ZONE1_INTERNAL: DistanceStudyPreset = preset(
   SYSTEM_230,
   LINE_100KM,
   baseSettings(),
-  8000,
+  3500,
   'THREE_PHASE',
   0,
   50,
@@ -116,8 +123,8 @@ export const DIST_02_DOUBLE_ENDED_Z2: DistanceStudyPreset = preset(
   'POTT',
   SYSTEM_500,
   LINE_100KM,
-  baseSettings(),
-  12000,
+  baseSettings(VT_500),
+  3500,
   'THREE_PHASE',
   0,
   95,
@@ -136,7 +143,7 @@ export const DIST_03_TAPPED_SLG: DistanceStudyPreset = preset(
   SYSTEM_230,
   LINE_100KM,
   baseSettings(),
-  5000,
+  3500,
   'SINGLE_LINE_GROUND',
   0.6,
   50,
@@ -144,21 +151,27 @@ export const DIST_03_TAPPED_SLG: DistanceStudyPreset = preset(
 
 /**
  * DIST-04 — Load encroachment scenario.
- * Expected outcome: all zones suppressed, RESTRAIN.
+ * Heavy load (low fault current) + large arc resistance pushes the
+ * apparent impedance into the load region: 50% reach with 60 Ω primary
+ * arc gives R ≈ 66 Ω, X ≈ 36 Ω — R ≥ R_min and above the load slope,
+ * so every zone is suppressed. Expected outcome: RESTRAIN, no trip.
  */
 export const DIST_04_LOAD_ENCROACHMENT: DistanceStudyPreset = preset(
   'DIST-04',
   'Load Encroachment',
-  'Heavy pre-fault load drives the apparent impedance into the load region; all zones must be suppressed.',
+  'Heavy pre-fault load plus arc resistance drives the apparent impedance into the load region; all zones must be suppressed.',
   'SINGLE_ENDED',
   'NONE',
   SYSTEM_230,
   LINE_100KM,
-  baseSettings({ loadEncroachment: { enabled: true, rMinLoadOhmSecondary: 3, thetaLoadDeg: 25 } }),
+  baseSettings(VT_230, {
+    loadEncroachment: { enabled: true, rMinLoadOhmSecondary: 3, thetaLoadDeg: 25 },
+    rArcOhmPrimary: 60,
+  }),
   1800,
   'THREE_PHASE',
   0,
-  0,
+  50,
 );
 
 // ──────────────── Public registry API ────────────────────────────────────────
