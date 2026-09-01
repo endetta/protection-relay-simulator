@@ -1,9 +1,8 @@
 /**
- * Distance Relay domain contracts (D01, per distance-relay.md).
+ * Distance Relay domain contracts (D01).
  *
- * These types are intentionally UI-independent and calculation-free.
- * They encode the vocabulary and data relationships locked by the
- * authoritative Distance D01 Engineering Specification.
+ * Rebuilt for multi-topology, mho + quadrilateral, dual-relay support.
+ * Types are UI-independent and calculation-free.
  */
 
 // ─────────────────────────────── ID aliases ────────────────────────────────
@@ -20,8 +19,14 @@ export type DistanceFaultType =
   | 'PHASE_PHASE'
   | 'SINGLE_LINE_GROUND';
 
-/** D01 § 3.1 — characteristic is mho circle only in v1. */
-export type DistanceCharacteristicType = 'MHO_CIRCLE';
+/** D01 § 3.1 — characteristic type (v2: mho + quadrilateral). */
+export type DistanceCharacteristicType = 'MHO_CIRCLE' | 'QUADRILATERAL';
+
+/** D01 § 3.2 — teleprotection scheme (visual-only in v2). */
+export type DistanceSchemeType = 'NONE' | 'PUTT' | 'POTT' | 'DCB' | 'DTT';
+
+/** D01 § 3.3 — SLD topology. */
+export type DistanceTopologyId = 'SINGLE_ENDED' | 'DOUBLE_ENDED' | 'TAPPED';
 
 /** D01 § 7.2 — evaluation display status. */
 export type DistanceDisplayStatus = 'OPERATE' | 'RESTRAIN' | 'INVALID';
@@ -59,12 +64,24 @@ export type DomainEvaluation<T> =
 
 export interface DistanceZoneSettings {
   readonly enabled: boolean;
-  /** Circle diameter in secondary Ω. */
+  /** Circle diameter or quadrilateral reach in secondary Ω. */
   readonly reachOhmSecondary: number;
   /** Characteristic angle in degrees (0–90). */
   readonly thetaCharDeg: number;
   /** Trip time delay in seconds. Zone 1 typically 0. */
   readonly timeDelaySec: number;
+}
+
+/** Quadrilateral-specific zone overrides (D01 § 5.3). */
+export interface DistanceQuadrilateralSettings {
+  /** Maximum reach in secondary Ω (same as mho diameter). */
+  readonly zReachOhmSecondary: number;
+  /** Compensation factor k (slope of right side). */
+  readonly k: number;
+  /** Left-side angle α in degrees (typically 0 = vertical). */
+  readonly alphaDeg: number;
+  /** Right-side angle β in degrees (typically 80). */
+  readonly betaDeg: number;
 }
 
 // ──────────────── Load encroachment (D01 § 8) ─────────────────────────────
@@ -103,9 +120,13 @@ export interface DistanceBreakerConfiguration {
 export interface DistanceDeviceSettings {
   readonly ct: DistanceCTConfiguration;
   readonly vt: DistanceVTConfiguration;
+  /** Active characteristic type (MHO_CIRCLE or QUADRILATERAL). */
+  readonly characteristicType: DistanceCharacteristicType;
   readonly zone1: DistanceZoneSettings;
   readonly zone2: DistanceZoneSettings;
   readonly zone3: DistanceZoneSettings;
+  /** Quadrilateral overrides (used when characteristic = QUADRILATERAL). */
+  readonly quadrilateral: DistanceQuadrilateralSettings;
   readonly loadEncroachment: DistanceLoadEncroachmentSettings;
   /** Study arc resistance in primary Ω. */
   readonly rArcOhmPrimary: number;
@@ -167,7 +188,7 @@ export interface DistanceOperatingResult {
   readonly impedance: DistanceImpedanceResult;
   /** Whether the apparent impedance falls in the load region. */
   readonly loadRegion: boolean;
-  /** Per-zone evaluation results (always 3 zones in v1). */
+  /** Per-zone evaluation results (always 3 zones in v2). */
   readonly zones: readonly DistanceZoneOperatingResult[];
   /** The first zone that trips, in priority order. */
   readonly tripZone: DistanceZoneId | null;
@@ -185,6 +206,9 @@ export interface DistanceStudyPreset {
   readonly id: DistanceStudyPresetId;
   readonly label: string;
   readonly description: string;
+  readonly topology: DistanceTopologyId;
+  /** Default scheme for this preset (visual-only in v2). */
+  readonly scheme: DistanceSchemeType;
   readonly system: DistanceSystemData;
   readonly line: DistanceLineData;
   readonly settings: DistanceDeviceSettings;
@@ -218,6 +242,8 @@ export type DistanceZoneTimers = Record<DistanceZoneId, DistanceZoneTimerState>;
 // ──────────────── Study definition (consolidated editable source) ──────────
 
 export interface DistanceStudyDefinition {
+  readonly topology: DistanceTopologyId;
+  readonly scheme: DistanceSchemeType;
   readonly system: DistanceSystemData;
   readonly line: DistanceLineData;
   readonly settings: DistanceDeviceSettings;

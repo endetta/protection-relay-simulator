@@ -31,26 +31,18 @@ export interface DistanceTimelineEvent {
 }
 
 export interface DistanceTimelineSnapshot {
-  /** Engineering time of this snapshot. */
   readonly timeSec: number;
-  /** The display status at this instant. */
   readonly displayStatus: DistanceDisplayStatus;
-  /** Whether the breaker is open. */
   readonly breakerOpen: boolean;
-  /** Active trip zone at this instant (null if no trip). */
   readonly tripZone: DistanceZoneId | null;
-  /** Per-zone status at this instant. */
   readonly zones: readonly {
     readonly zoneId: DistanceZoneId;
     readonly inZone: boolean;
     readonly timerElapsed: boolean;
   }[];
-  /** Apparent impedance at this instant. */
   readonly rOhmSecondary: number;
   readonly xOhmSecondary: number;
-  /** Whether the apparent impedance is in the load region. */
   readonly loadRegion: boolean;
-  /** Cumulative events up to this snapshot. */
   readonly events: readonly DistanceTimelineEvent[];
 }
 
@@ -59,27 +51,13 @@ export interface DistanceTimelineRun {
   readonly breakerClearingSec: number;
   readonly events: readonly DistanceTimelineEvent[];
   readonly snapshots: readonly DistanceTimelineSnapshot[];
-  /** Final trip zone (null if no trip occurred). */
   readonly finalTripZone: DistanceZoneId | null;
-  /** Final display status. */
   readonly finalDisplayStatus: DistanceDisplayStatus;
-  /** Total engineering duration of the timeline. */
   readonly durationSec: number;
 }
 
 // ──────────────────────── Timeline engine ──────────────────────────────────
 
-/**
- * Compute a deterministic timeline for a distance relay study evaluation.
- * This is a single-fault, fixed-current timeline: the fault location and
- * current are constant throughout the evaluation. The timeline produces:
- *
- *   t = 0:           evaluation + zone pickup events
- *   t = zone_delay:  trip event (first operated zone)
- *   t = trip + breaker: breaker clear event
- *
- * No external clear is supported in v1 (out of scope per D01 § 3.2).
- */
 export function computeDistanceTimeline(study: DistanceStudyDefinition): DistanceTimelineRun {
   const evaluateInput: EvaluateDistanceInput = {
     vLLKvPrimary: study.system.vLLKvPrimary,
@@ -96,7 +74,6 @@ export function computeDistanceTimeline(study: DistanceStudyDefinition): Distanc
   const events: DistanceTimelineEvent[] = [];
   const breakerClearingSec = study.settings.breaker.clearingTimeSec;
 
-  // Zone pickup events at t = 0.
   for (const zone of result.zones) {
     if (zone.inZone) {
       const zoneNum = zone.zoneId;
@@ -110,7 +87,6 @@ export function computeDistanceTimeline(study: DistanceStudyDefinition): Distanc
     }
   }
 
-  // Trip event.
   let tripTimeSec = 0;
   if (result.tripZone) {
     const tripZone = result.zones.find((z) => z.zoneId === result.tripZone);
@@ -123,7 +99,6 @@ export function computeDistanceTimeline(study: DistanceStudyDefinition): Distanc
     });
   }
 
-  // Breaker clear event.
   let clearTimeSec = tripTimeSec;
   if (result.tripZone) {
     clearTimeSec = tripTimeSec + breakerClearingSec;
@@ -134,7 +109,6 @@ export function computeDistanceTimeline(study: DistanceStudyDefinition): Distanc
     });
   }
 
-  // Build snapshots: one at t=0, one at trip (if timed), one at breaker clear.
   const snapshots: DistanceTimelineSnapshot[] = [];
   const makeSnapshot = (timeSec: number, tripActive: boolean, breakerOpen: boolean): DistanceTimelineSnapshot => ({
     timeSec,
@@ -173,16 +147,7 @@ export function computeDistanceTimeline(study: DistanceStudyDefinition): Distanc
   };
 }
 
-/**
- * Evaluate the distance device at a specific engineering time.
- * For v1 this is identical to `evaluateDistanceDevice` because the
- * fault current is constant; this wrapper exists so the D07 contract
- * matches the O07 `snapshotAt` pattern for future extensibility.
- */
-export function snapshotAt(
-  study: DistanceStudyDefinition,
-  _timeSec: number,
-): DistanceOperatingResult {
+export function snapshotAt(study: DistanceStudyDefinition, _timeSec: number): DistanceOperatingResult {
   return evaluateDistanceDevice({
     vLLKvPrimary: study.system.vLLKvPrimary,
     faultCurrentA: study.faultCurrentA,

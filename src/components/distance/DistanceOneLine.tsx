@@ -1,113 +1,141 @@
-import { useMemo } from 'react';
-import type { DistanceDisplayStatus, DistanceZoneId } from '../../types/distance';
-
-/**
- * Distance Relay one-line / SLD (D04).
- *
- * Pure-presentation SVG: the diagram reads a normalized fault position
- * (0–100 %), an optional trip zone, and the display status. It never
- * recomputes relay math. The fault marker color follows the display
- * status (green = RESTRAIN, red = OPERATE, amber = INVALID / load).
- *
- * Colors are read from CSS custom properties defined in index.css
- * so the diagram honours theme tokens (--sim-accent, --sim-green,
- * --sim-amber, --sim-red, --sim-text-muted, --sim-grid, --sim-bg).
- */
+import { memo, type FC } from 'react';
+import { buildSldLayout, topologyLabel, schemeLabel } from '../../presentation/distancePresentation';
+import type { DistanceStudyDefinition } from '../../types/distance';
+import './distanceOneLine.css';
 
 export interface DistanceOneLineProps {
-  readonly faultPct: number; // 0 = local bus, 100 = remote bus
-  readonly tripZone: DistanceZoneId | null;
-  readonly displayStatus: DistanceDisplayStatus;
-  readonly loadRegion: boolean;
-  readonly lineLengthKm: number;
-  readonly systemKv: number;
+  readonly study: DistanceStudyDefinition;
   readonly className?: string;
 }
 
-const VIEW_W = 720;
-const VIEW_H = 220;
-const PADDING_X = 80;
-const BUS_Y = VIEW_H / 2;
+const DISTANCE_VIEWBOX_W = 640;
+const DISTANCE_VIEWBOX_H = 260;
+const BUS_Y = 130;
+const BUS_LEFT_X = 80;
+const BUS_RIGHT_X = 560;
 
-const TOKEN = {
-  accent: 'var(--sim-accent)',
-  green: 'var(--sim-green)',
-  amber: 'var(--sim-amber)',
-  red: 'var(--sim-red)',
-  textMuted: 'var(--sim-text-muted)',
-  grid: 'var(--sim-border)',
-  surface: 'var(--sim-panel)',
-} as const;
-
-function faultColor(status: DistanceDisplayStatus, loadRegion: boolean): string {
-  if (loadRegion) return TOKEN.amber;
-  if (status === 'OPERATE') return TOKEN.red;
-  if (status === 'INVALID') return TOKEN.amber;
-  return TOKEN.green;
+function busX(xNorm: number): number {
+  return BUS_LEFT_X + (BUS_RIGHT_X - BUS_LEFT_X) * xNorm;
 }
 
-export function DistanceOneLine({ faultPct, tripZone, displayStatus, loadRegion, lineLengthKm, systemKv, className }: DistanceOneLineProps) {
-  const clampedPct = Math.min(100, Math.max(0, faultPct));
-  const xStart = PADDING_X;
-  const xEnd = VIEW_W - PADDING_X;
-  const xFault = xStart + ((xEnd - xStart) * clampedPct) / 100;
-  const color = useMemo(() => faultColor(displayStatus, loadRegion), [displayStatus, loadRegion]);
-  const tripBadge = tripZone ? `Z${tripZone.charAt(1)} TRIP` : null;
+export const DistanceOneLine: FC<DistanceOneLineProps> = memo(function DistanceOneLine({
+  study,
+  className = '',
+}: DistanceOneLineProps) {
+  const layout = buildSldLayout(study.topology, study.scheme);
+  const lineLengthKm = layout.lines[0]?.lengthKm ?? 0;
+  const relayCount = layout.relays.length;
 
   return (
-    <div className={className ?? 'flex w-full flex-col gap-2'}>
-      <div className='flex items-center justify-between text-[11px] text-[color:var(--sim-text-muted)]'>
-        <span>Single-line Diagram (D04)</span>
-        <span>{lineLengthKm.toFixed(0)} km · {systemKv.toFixed(0)} kV</span>
+    <section className={`distance-sld simulator-theme ${className}`.trim()} aria-label='Single-line diagram'>
+      <div className='distance-sld-header'>
+        <div>
+          <span className='distance-sld-kicker'>Topology · single-line diagram</span>
+          <h3 className='distance-sld-title'>{topologyLabel(layout.topology)}</h3>
+        </div>
+        <div className='distance-sld-meta'>
+          <span className='distance-sld-line-meta'>{lineLengthKm} km line</span>
+          <span className='distance-sld-scheme-meta'>{schemeLabel(study.scheme)}</span>
+          <span className='distance-sld-ct-meta'>
+            {study.settings.ct.primaryRatedA}:{study.settings.ct.secondaryRatedA} CT · {study.settings.vt.primaryRatedKv} kV VT
+          </span>
+        </div>
       </div>
-      <div className='relative overflow-hidden rounded border border-[color:var(--sim-border)] bg-[color:var(--sim-panel)]'>
-        <svg viewBox={`0 0 ${VIEW_W} ${VIEW_H}`} preserveAspectRatio='xMidYMid meet' className='block h-44 w-full'>
-          {/* Local bus */}
-          <line x1={xStart} y1={BUS_Y - 18} x2={xStart} y2={BUS_Y + 18} stroke={TOKEN.textMuted} strokeWidth={2} />
-          <text x={xStart} y={BUS_Y + 38} fontSize={11} fill={TOKEN.textMuted} textAnchor='middle'>Local bus</text>
 
-          {/* Remote bus */}
-          <line x1={xEnd} y1={BUS_Y - 18} x2={xEnd} y2={BUS_Y + 18} stroke={TOKEN.textMuted} strokeWidth={2} />
-          <text x={xEnd} y={BUS_Y + 38} fontSize={11} fill={TOKEN.textMuted} textAnchor='middle'>Remote bus</text>
-
-          {/* Transmission line */}
-          <line x1={xStart} y1={BUS_Y} x2={xEnd} y2={BUS_Y} stroke={TOKEN.accent} strokeWidth={1.5} />
-          {/* Tower markers */}
-          {Array.from({ length: 5 }).map((_, i) => {
-            const t = (i + 1) / 6;
-            const x = xStart + (xEnd - xStart) * t;
-            return <line key={i} x1={x} y1={BUS_Y - 6} x2={x} y2={BUS_Y + 6} stroke={TOKEN.accent} strokeWidth={1} />;
+      <div className='distance-sld-canvas'>
+        <svg
+          width={DISTANCE_VIEWBOX_W}
+          height={DISTANCE_VIEWBOX_H}
+          viewBox={`0 0 ${DISTANCE_VIEWBOX_W} ${DISTANCE_VIEWBOX_H}`}
+          role='img'
+          aria-label={`${topologyLabel(layout.topology)} — ${study.scheme === 'NONE' ? 'direct tripping, no teleprotection' : schemeLabel(study.scheme)}`}
+        >
+          {layout.lines.map((line) => {
+            const from = layout.buses.find((b) => b.id === line.fromBusId);
+            const to = layout.buses.find((b) => b.id === line.toBusId);
+            if (!from || !to) return null;
+            const x1 = busX(from.xNorm);
+            const x2 = busX(to.xNorm);
+            const midX = (x1 + x2) / 2;
+            return (
+              <g key={line.id} className='distance-sld-line' aria-hidden='true'>
+                <line x1={x1} y1={BUS_Y} x2={x2} y2={BUS_Y} />
+                <text className='distance-sld-line-label' x={midX} y={BUS_Y - 10} textAnchor='middle'>
+                  {line.lengthKm} km
+                </text>
+              </g>
+            );
           })}
 
-          {/* Relay symbol at local bus */}
-          <rect x={xStart - 28} y={BUS_Y - 40} width={28} height={20} fill='none' stroke={TOKEN.green} strokeWidth={1.2} />
-          <text x={xStart - 14} y={BUS_Y - 26} fontSize={10} fill={TOKEN.green} textAnchor='middle'>21</text>
+          {layout.tappedLoads.map((load) => {
+            const x = busX(load.xNorm);
+            return (
+              <g key={load.busId} className='distance-sld-tapped' aria-hidden='true'>
+                <line x1={x} y1={BUS_Y} x2={x} y2={BUS_Y + 42} />
+                <rect x={x - 16} y={BUS_Y + 42} width='32' height='26' rx='3' />
+                <path
+                  className='distance-sld-tapped-arrow'
+                  d={`M${x - 7} ${BUS_Y + 56} h14 M${x} ${BUS_Y + 51} l-7 5 h14 z`}
+                />
+                <text className='distance-sld-tapped-label' x={x} y={BUS_Y + 84} textAnchor='middle'>
+                  {load.label}
+                </text>
+              </g>
+            );
+          })}
 
-          {/* Breaker at local bus */}
-          <rect x={xStart + 4} y={BUS_Y - 4} width={10} height={8} fill='none' stroke={TOKEN.textMuted} strokeWidth={1.2} />
-          <circle cx={xStart + 9} cy={BUS_Y} r={1.5} fill={TOKEN.textMuted} />
+          {layout.buses.map((bus) => {
+            const x = busX(bus.xNorm);
+            return (
+              <g key={bus.id} className='distance-sld-bus' aria-hidden='true'>
+                <rect x={x - 16} y={BUS_Y - 16} width='32' height='32' rx='4' />
+                <line x1={x - 22} y1={BUS_Y} x2={x + 22} y2={BUS_Y} />
+                <line x1={x} y1={BUS_Y - 22} x2={x} y2={BUS_Y + 22} />
+                <text className='distance-sld-bus-label' x={x} y={BUS_Y + 44} textAnchor='middle'>
+                  {bus.label}
+                </text>
+              </g>
+            );
+          })}
 
-          {/* Fault marker */}
-          <g>
-            <line x1={xFault} y1={BUS_Y - 30} x2={xFault} y2={BUS_Y + 30} stroke={color} strokeWidth={1.4} strokeDasharray='3 3' />
-            <circle cx={xFault} cy={BUS_Y} r={5} fill={color} />
-            <text x={xFault} y={BUS_Y - 36} fontSize={10} fill={color} textAnchor='middle'>{clampedPct.toFixed(0)}%</text>
-          </g>
-
-          {/* Trip badge */}
-          {tripBadge && (
-            <g>
-              <rect x={xStart - 70} y={12} width={70} height={20} fill={color} rx={2} />
-              <text x={xStart - 35} y={26} fontSize={11} fill={TOKEN.surface} fontWeight={700} textAnchor='middle'>{tripBadge}</text>
+          {layout.schemeLink && (
+            <g className='distance-sld-scheme-link' aria-hidden='true'>
+              <line
+                x1={busX(layout.relays[0].xNorm)}
+                y1={BUS_Y - 34}
+                x2={busX(layout.relays[relayCount - 1].xNorm)}
+                y2={BUS_Y - 34}
+                strokeDasharray='4 4'
+              />
+              <text
+                className='distance-sld-scheme-label'
+                x={(busX(layout.relays[0].xNorm) + busX(layout.relays[relayCount - 1].xNorm)) / 2}
+                y={BUS_Y - 42}
+                textAnchor='middle'
+              >
+                {layout.schemeLink.scheme}
+              </text>
             </g>
           )}
 
-          {/* Display status text */}
-          <text x={VIEW_W / 2} y={28} fontSize={12} fill={color} textAnchor='middle' fontWeight={600}>
-            {loadRegion ? 'LOAD ENCROACHMENT' : displayStatus}
-          </text>
+          {layout.relays.map((relay) => {
+            const x = busX(relay.xNorm);
+            const y = BUS_Y + (relay.facing === 'forward' ? -34 : 34);
+            return (
+              <g key={relay.id} className='distance-sld-relay' aria-hidden='true'>
+                <line x1={x} y1={BUS_Y} x2={x} y2={y} />
+                <circle cx={x} cy={y} r='13' />
+                <text className='distance-sld-relay-label' x={x} y={y + 4} textAnchor='middle'>
+                  {relay.label}
+                </text>
+                <text className='distance-sld-relay-facing' x={x} y={y + (relay.facing === 'forward' ? -18 : 26)} textAnchor='middle'>
+                  {relay.facing === 'forward' ? 'FWD' : 'REV'}
+                </text>
+              </g>
+            );
+          })}
         </svg>
       </div>
-    </div>
+    </section>
   );
-}
+});

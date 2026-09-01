@@ -10,20 +10,19 @@
  *     invalid draft cannot enter the engineering state;
  *   - `isDirty` reports whether the editable study has diverged from
  *     the last applied preset so the UI can flag "Modified".
- *
- * The reducer is consumed by the DistanceSimulator page and is the
- * single source of truth for which preset / system / line / zone /
- * load-encroachment / arc values are in effect at the UI.
  */
 
 import type {
+  DistanceCharacteristicType,
   DistanceDeviceSettings,
   DistanceFaultType,
   DistanceLoadEncroachmentSettings,
+  DistanceQuadrilateralSettings,
+  DistanceSchemeType,
   DistanceStudyDefinition,
   DistanceStudyPresetId,
   DistanceSystemData,
-  DistanceLineData,
+  DistanceTopologyId,
   DistanceZoneSettings,
 } from '../types/distance';
 import { DEFAULT_DISTANCE_PRESET_ID, getDistanceStudyPreset } from '../studies/distancePresets';
@@ -31,19 +30,19 @@ import { DEFAULT_DISTANCE_PRESET_ID, getDistanceStudyPreset } from '../studies/d
 // ─────────────────────────── Public types ──────────────────────────────────
 
 export interface DistanceSimulatorState {
-  /** Current editable study definition (immutable update). */
   readonly study: DistanceStudyDefinition;
-  /** ID of the most recently applied preset (source of truth for Reset). */
   readonly presetId: DistanceStudyPresetId;
-  /** True when the current study diverges from the active preset. */
   readonly modified: boolean;
 }
 
 export type DistanceAction =
   | { readonly type: 'APPLY_PRESET'; readonly presetId: DistanceStudyPresetId }
   | { readonly type: 'RESET' }
+  | { readonly type: 'SET_TOPOLOGY'; readonly topology: DistanceTopologyId }
+  | { readonly type: 'SET_SCHEME'; readonly scheme: DistanceSchemeType }
+  | { readonly type: 'SET_CHARACTERISTIC_TYPE'; readonly characteristic: DistanceCharacteristicType }
   | { readonly type: 'SET_SYSTEM'; readonly patch: Partial<DistanceSystemData> }
-  | { readonly type: 'SET_LINE'; readonly patch: Partial<DistanceLineData> }
+  | { readonly type: 'SET_LINE'; readonly patch: Partial<DistanceStudyDefinition['line']> }
   | { readonly type: 'SET_FAULT_CURRENT_A'; readonly value: number }
   | { readonly type: 'SET_FAULT_PCT'; readonly value: number }
   | { readonly type: 'SET_FAULT_TYPE'; readonly value: DistanceFaultType }
@@ -52,6 +51,7 @@ export type DistanceAction =
   | { readonly type: 'SET_CT'; readonly patch: Partial<DistanceDeviceSettings['ct']> }
   | { readonly type: 'SET_VT'; readonly patch: Partial<DistanceDeviceSettings['vt']> }
   | { readonly type: 'SET_ZONE'; readonly zone: 1 | 2 | 3; readonly patch: Partial<DistanceZoneSettings> }
+  | { readonly type: 'SET_QUADRILATERAL'; readonly patch: Partial<DistanceQuadrilateralSettings> }
   | { readonly type: 'SET_LOAD_ENCROACHMENT'; readonly patch: Partial<DistanceLoadEncroachmentSettings> }
   | { readonly type: 'SET_BREAKER'; readonly patch: Partial<DistanceDeviceSettings['breaker']> };
 
@@ -61,12 +61,10 @@ function isFiniteNumber(value: number): boolean {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
-/** Return `value` only when it is finite; otherwise return `fallback`. */
 function safe(value: number, fallback: number): number {
   return isFiniteNumber(value) ? value : fallback;
 }
 
-/** Shallow merge that drops non-finite numeric values from `patch`. */
 function sanitise<T extends object>(base: T, patch: Partial<T>): T {
   const next = base as Record<string, unknown>;
   const result: Record<string, unknown> = { ...next };
@@ -78,7 +76,6 @@ function sanitise<T extends object>(base: T, patch: Partial<T>): T {
   return result as T;
 }
 
-/** Structural equality for two `DistanceStudyDefinition` objects. */
 export function studyEquals(a: DistanceStudyDefinition, b: DistanceStudyDefinition): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -94,9 +91,10 @@ export function createInitialDistanceState(presetId: DistanceStudyPresetId = DEF
   };
 }
 
-/** Materialise an editable `DistanceStudyDefinition` from a registry preset. */
 export function studyFromPreset(preset: ReturnType<typeof getDistanceStudyPreset>): DistanceStudyDefinition {
   return {
+    topology: preset.topology,
+    scheme: preset.scheme,
     system: { ...preset.system },
     line: { ...preset.line },
     settings: cloneSettings(preset.settings),
@@ -112,19 +110,17 @@ function cloneSettings(settings: DistanceDeviceSettings): DistanceDeviceSettings
   return {
     ct: { ...settings.ct },
     vt: { ...settings.vt },
+    characteristicType: settings.characteristicType,
     zone1: { ...settings.zone1 },
     zone2: { ...settings.zone2 },
     zone3: { ...settings.zone3 },
+    quadrilateral: { ...settings.quadrilateral },
     loadEncroachment: { ...settings.loadEncroachment },
     rArcOhmPrimary: settings.rArcOhmPrimary,
     breaker: { ...settings.breaker },
   };
 }
 
-/**
- * Compare the active study with the canonical preset to update the
- * `modified` flag. Used inside the reducer on every mutation.
- */
 function flagModified(state: DistanceSimulatorState, next: DistanceStudyDefinition): DistanceSimulatorState {
   const preset = getDistanceStudyPreset(state.presetId);
   const presetStudy = studyFromPreset(preset);
@@ -142,6 +138,19 @@ export function distanceStateReducer(state: DistanceSimulatorState, action: Dist
     case 'RESET': {
       const preset = getDistanceStudyPreset(state.presetId);
       return { study: studyFromPreset(preset), presetId: state.presetId, modified: false };
+    }
+    case 'SET_TOPOLOGY': {
+      const nextStudy: DistanceStudyDefinition = { ...state.study, topology: action.topology };
+      return flagModified(state, nextStudy);
+    }
+    case 'SET_SCHEME': {
+      const nextStudy: DistanceStudyDefinition = { ...state.study, scheme: action.scheme };
+      return flagModified(state, nextStudy);
+    }
+    case 'SET_CHARACTERISTIC_TYPE': {
+      const next: DistanceDeviceSettings = { ...state.study.settings, characteristicType: action.characteristic };
+      const nextStudy: DistanceStudyDefinition = { ...state.study, settings: next };
+      return flagModified(state, nextStudy);
     }
     case 'SET_SYSTEM': {
       const nextStudy: DistanceStudyDefinition = { ...state.study, system: sanitise(state.study.system, action.patch) };
@@ -195,6 +204,11 @@ export function distanceStateReducer(state: DistanceSimulatorState, action: Dist
       };
       return flagModified(state, nextStudy);
     }
+    case 'SET_QUADRILATERAL': {
+      const next: DistanceQuadrilateralSettings = sanitise(state.study.settings.quadrilateral, action.patch);
+      const nextStudy: DistanceStudyDefinition = { ...state.study, settings: { ...state.study.settings, quadrilateral: next } };
+      return flagModified(state, nextStudy);
+    }
     case 'SET_LOAD_ENCROACHMENT': {
       const next: DistanceLoadEncroachmentSettings = sanitise(state.study.settings.loadEncroachment, action.patch);
       const nextStudy: DistanceStudyDefinition = { ...state.study, settings: { ...state.study.settings, loadEncroachment: next } };
@@ -220,9 +234,6 @@ export interface DerivedDistanceStudy {
 export function deriveDistanceStudy(state: DistanceSimulatorState): DerivedDistanceStudy {
   const preset = getDistanceStudyPreset(state.presetId);
   const lineImpedancePrimaryOhm = state.study.line.z1OhmPerKmPrimary * state.study.line.lengthKm;
-  // V / I primary for a bolted 3PH fault at the remote bus gives the same
-  // ratio (kV → V via VT, kA → A via CT). We expose the secondary value as
-  // a derived metric, not as a control target.
   const vtRatio = (state.study.settings.vt.primaryRatedKv * 1000) / Math.sqrt(3) / state.study.settings.vt.secondaryRatedV;
   const ctRatio = state.study.settings.ct.primaryRatedA / state.study.settings.ct.secondaryRatedA;
   const zLineSecondary = lineImpedancePrimaryOhm * (ctRatio / vtRatio);

@@ -1,0 +1,172 @@
+.distance-sld {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 6px;
+  background: var(--sim-panel-raised);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
+  color: var(--sim-text);
+  padding: 10px;
+}
+
+.distance-sld-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sim-border);
+  padding: 0 1px 8px;
+}
+
+.distance-sld-header > div:first-child {
+  min-width: 0;
+}
+
+.distance-sld-kicker {
+  display: block;
+  color: var(--sim-accent);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.distance-sld-title {
+  margin: 3px 0 0;
+  color: var(--sim-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.distance-sld-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  justify-content: flex-end;
+  max-width: 60%;
+  color: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.distance-sld-line-meta { color: var(--sim-accent); }
+.distance-sld-scheme-meta { color: var(--sim-text-secondary); }
+.distance-sld-ct-meta { color: var(--sim-text-muted); }
+
+.distance-sld-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  border: 1px solid var(--sim-border-soft);
+  border-radius: 5px;
+  background: var(--sim-bg);
+  padding: 6px;
+}
+
+.distance-sld-canvas svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.distance-sld-line line {
+  stroke: var(--sim-border-strong);
+  stroke-width: 2;
+}
+
+.distance-sld-line-label {
+  fill: var(--sim-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.distance-sld-bus rect {
+  fill: var(--sim-panel-raised);
+  stroke: var(--sim-accent);
+  stroke-width: 1.5;
+}
+
+.distance-sld-bus line {
+  stroke: var(--sim-text-secondary);
+  stroke-width: 2.5;
+}
+
+.distance-sld-bus-label {
+  fill: var(--sim-text-secondary);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.distance-sld-relay line {
+  stroke: var(--sim-border-strong);
+  stroke-width: 1.5;
+}
+
+.distance-sld-relay circle {
+  fill: var(--sim-control);
+  stroke: var(--sim-amber);
+  stroke-width: 2;
+}
+
+.distance-sld-relay-label {
+  fill: var(--sim-text);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.distance-sld-relay-facing {
+  fill: var(--sim-amber);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.distance-sld-tapped line {
+  stroke: var(--sim-border-strong);
+  stroke-width: 2;
+}
+
+.distance-sld-tapped rect {
+  fill: var(--sim-panel-raised);
+  stroke: var(--sim-text-muted);
+  stroke-width: 1.5;
+}
+
+.distance-sld-tapped-arrow {
+  fill: var(--sim-text-muted);
+  stroke: none;
+}
+
+.distance-sld-tapped-label {
+  fill: var(--sim-text-muted);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.distance-sld-scheme-link line {
+  stroke: var(--sim-accent);
+  stroke-width: 1.5;
+}
+
+.distance-sld-scheme-label {
+  fill: var(--sim-accent);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}

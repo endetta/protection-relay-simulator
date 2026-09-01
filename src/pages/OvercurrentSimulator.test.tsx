@@ -50,6 +50,7 @@ describe('O15 Overcurrent page / route integration contracts', () => {
     expect(markup).toContain('data-available="true"');
     expect((markup.match(/data-available="true"/g) ?? []).length).toBe(4);
     expect((markup.match(/data-available="false"/g) ?? []).length).toBe(0);
+    expect(markup).not.toContain('data-available="false"');
   });
 
   it('preserves the Differential header defaults while allowing module-specific Overcurrent identity', () => {
