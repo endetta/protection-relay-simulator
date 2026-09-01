@@ -1,0 +1,151 @@
+.distance-rx {
+  min-width: 0;
+  border: 1px solid var(--sim-border);
+  border-radius: 6px;
+  background: var(--sim-panel-raised);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.018);
+  color: var(--sim-text);
+  padding: 10px;
+}
+
+.distance-rx-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--sim-border);
+  padding: 0 1px 8px;
+}
+
+.distance-rx-header > div:first-child {
+  min-width: 0;
+}
+
+.distance-rx-kicker {
+  display: block;
+  color: var(--sim-accent);
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.distance-rx-title {
+  margin: 3px 0 0;
+  color: var(--sim-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.distance-rx-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  border: 1px solid var(--sim-border-soft);
+  border-radius: 5px;
+  background: var(--sim-bg);
+  padding: 6px;
+}
+
+.distance-rx-canvas svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.distance-rx-grid {
+  stroke: var(--sim-grid-line);
+  stroke-width: 0.6;
+}
+
+.distance-rx-axis-r {
+  stroke: var(--sim-border-strong);
+  stroke-width: 1.2;
+}
+
+.distance-rx-axis-x {
+  stroke: var(--sim-border-strong);
+  stroke-width: 1.2;
+}
+
+.distance-rx-axis-arrow {
+  stroke: var(--sim-border-strong);
+  stroke-width: 1.2;
+  fill: none;
+}
+
+.distance-rx-axis-label {
+  fill: var(--sim-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.distance-rx-axis-scale {
+  fill: var(--sim-text-dim);
+  font-size: 8px;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+.distance-rx-zone-path {
+  vector-effect: non-scaling-stroke;
+}
+
+.distance-rx-zone-path[data-zone='Z1'] { stroke: var(--sim-green); }
+.distance-rx-zone-path[data-zone='Z2'] { stroke: var(--sim-accent); }
+.distance-rx-zone-path[data-zone='Z3'] { stroke: var(--sim-text-muted); }
+
+.distance-rx-load-slope {
+  stroke: var(--sim-amber);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 3;
+}
+
+.distance-rx-load-rmin {
+  stroke: var(--sim-amber);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 4;
+}
+
+.distance-rx-fault-point circle {
+  vector-effect: non-scaling-stroke;
+}
+
+.distance-rx-fault-point[data-tone='operate'] circle {
+  stroke: var(--sim-red);
+  stroke-width: 2;
+}
+
+.distance-rx-fault-point[data-tone='restrain'] circle {
+  stroke: var(--sim-green);
+  stroke-width: 2;
+}
+
+.distance-rx-fault-point[data-tone='invalid'] circle {
+  stroke: var(--sim-amber);
+  stroke-width: 2;
+}
+
+.distance-rx-point-label {
+  fill: var(--sim-text-secondary);
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.distance-rx-trajectory {
+  stroke: var(--sim-amber);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+
+.distance-rx-prefault circle {
+  fill: var(--sim-accent);
+  stroke: var(--sim-bg);
+  stroke-width: 0.8;
+}

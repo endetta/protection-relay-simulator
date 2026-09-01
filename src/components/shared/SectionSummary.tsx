@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-type SummaryTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
+export type SummaryTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
 
 interface SummaryGridProps {
   children: ReactNode;
