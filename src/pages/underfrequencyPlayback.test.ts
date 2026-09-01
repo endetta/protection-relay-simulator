@@ -99,7 +99,10 @@ function simulateRun({ totalTimeSec, simulationSpeed, wallDeltaSecs }: RunOpts):
   // same place the useEffect runs (after the scrub commits).
   for (const wallDeltaSec of wallDeltaSecs) {
     if (playbackState !== 'RUNNING') break;
-    const { timeSec: next, reachedEnd } = computeNextScrubSec(
+    // reachedEnd is intentionally destructured but unused: it is an
+    // informational signal only (see computeNextScrubSec JSDoc). The latch is
+    // driven by the committed scrub value below, never by reachedEnd.
+    const { timeSec: next } = computeNextScrubSec(
       scrubTimeSec,
       wallDeltaSec,
       simulationSpeed,
@@ -111,20 +114,18 @@ function simulateRun({ totalTimeSec, simulationSpeed, wallDeltaSecs }: RunOpts):
     }
     // Single, sole COMPLETE latch — applied against the committed scrub, exactly
     // once per qualifying state, never from the tick inline. Mirrors the
-    // useEffect in useUnderfrequencyPlayback.
+    // useEffect in useUnderfrequencyPlayback: same `(scrubTimeSec ?? 0) >=
+    // totalTimeSec` predicate so the test model and production share one
+    // truth.
     if (
       playbackState === 'RUNNING' &&
       totalTimeSec > 0 &&
-      scrubTimeSec !== null &&
-      scrubTimeSec >= totalTimeSec
+      (scrubTimeSec ?? 0) >= totalTimeSec
     ) {
       playbackState = 'COMPLETE';
       dispatched.push({ type: 'SET_PLAYBACK_STATE', playbackState: 'COMPLETE' });
       break;
     }
-    // `reachedEnd` is an informational signal; the latch is driven by the
-    // committed scrub value above, never by reachedEnd inside the tick.
-    void reachedEnd;
   }
   return dispatched;
 }

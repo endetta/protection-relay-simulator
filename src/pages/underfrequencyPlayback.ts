@@ -29,7 +29,13 @@ import type {
 
 /**
  * Advance the engineering-time scrub by a wall-clock delta × playback speed,
- * clamping at `totalTimeSec`. `reachedEnd` is the latch signal for COMPLETE.
+ * clamping at `totalTimeSec`. Returns the next scrub value and an informational
+ * `reachedEnd` flag. The flag is a derived signal (`next >= totalTimeSec`),
+ * not the production COMPLETE-latch trigger: the latch lives in a `useEffect`
+ * that observes the *committed* `scrubTimeSec` reducer state, so the helper
+ * itself stays a pure clock advance and the latching decision stays
+ * reactive. Callers should not branch on `reachedEnd` to drive state
+ * transitions; treat it as a debugging / test convenience.
  */
 export function computeNextScrubSec(
   currentScrubSec: number | null,
@@ -113,9 +119,12 @@ export function useUnderfrequencyPlayback({
   }, [dispatch, playbackState, simulationSpeed, totalTimeSec]);
 
   // Single, sole COMPLETE latch: fires reactively against the committed
-  // scrub value once scrubTimeSec reaches totalTimeSec. Intentionally NOT
-  // inlined in the rAF tick — that caused a dual-dispatch (tick + this effect)
-  // in a prior branch; keeping it here guarantees at most one COMPLETE dispatch.
+  // scrub value once scrubTimeSec reaches totalTimeSec. The latch is driven
+  // by the committed scrub state in this effect — not by the rAF tick — so
+  // it cannot fire on a speculative or transient value, only on what the
+  // reducer has actually accepted. This is the canonical placement for a
+  // state-transition latching in React: side effects on a state change
+  // belong in an effect, not in the sampler.
   useEffect(() => {
     if (playbackState === 'RUNNING' && totalTimeSec > 0 && (scrubTimeSec ?? 0) >= totalTimeSec) {
       dispatch({ type: 'SET_PLAYBACK_STATE', playbackState: 'COMPLETE' });
