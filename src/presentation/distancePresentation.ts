@@ -184,10 +184,13 @@ export function buildQuadrilateralPath(
   zone: DistanceZoneSettings,
   domainHalfOhm: number,
 ): string {
-  if (!zone.enabled || quad.zReachOhmSecondary <= 0) {
-    return '';
-  }
-  const zReach = quad.zReachOhmSecondary;
+  if (!zone.enabled) return '';
+  // The engine decides containment with `zReach = zone.reachOhmSecondary`
+  // (per zone), so the drawn polygon MUST use the same per-zone reach —
+  // using the single shared `quad.zReachOhmSecondary` would make every
+  // zone's drawing identical and out of sync with the trip decision.
+  const zReach = zone.reachOhmSecondary;
+  if (!Number.isFinite(zReach) || zReach <= 0) return '';
   const alphaRad = (quad.alphaDeg * Math.PI) / 180;
   const betaRad = (quad.betaDeg * Math.PI) / 180;
   const clamp = (v: number) => Math.max(-domainHalfOhm, Math.min(domainHalfOhm, v));

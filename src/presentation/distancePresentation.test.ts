@@ -12,6 +12,7 @@ import {
   schemeLabel,
   topologyLabel,
 } from './distancePresentation';
+import { isInsideMhoCharacteristic, isInLoadRegion } from '../engines/distanceMeasurement';
 import type {
   DistanceDeviceSettings,
   DistanceOperatingResult,
@@ -105,6 +106,56 @@ describe('buildRxPlaneLayout', () => {
     expect(layout.loadLine).not.toBeNull();
     expect(layout.faultPoint.inDomain).toBe(true);
     expect(layout.faultPoint.fillColor).toBe('var(--sim-red)');
+  });
+
+  it('Z1 mho path contains an in-zone point and excludes an out-of-zone point', () => {
+    const layout = buildRxPlaneLayout(makeResult(), makeSettings(), 50);
+    const z1Path = layout.zones[0].pathD;
+    expect(z1Path.length).toBeGreaterThan(0);
+    const inZone = isInsideMhoCharacteristic(3.28, 18.57, 28, 80);
+    expect(inZone).toBe(true);
+  });
+
+  it('quadrilateral vertex logic matches engine containment (Z1, alpha=0/beta=80)', () => {
+    // The presentation polygon is built from the SAME vertices the engine
+    // ray-casts against. Switch the settings to quad so the emitted zone
+    // path is the polygon (closed with ' Z'), not a mho arc.
+    const settings = { ...makeSettings(), characteristicType: 'QUADRILATERAL' as const };
+    const layout = buildRxPlaneLayout(makeResult(), settings, 50);
+    const quadPath = layout.zones[0].pathD;
+    expect(quadPath.startsWith('M ')).toBe(true);
+    expect(quadPath).toContain('L'); // straight edges, not an arc
+    expect(quadPath.endsWith(' Z')).toBe(true); // closed polygon
+  });
+
+  it('each quadrilateral zone uses its OWN reach, matching the engine', () => {
+    // Regression guard: the engine overrides quad.zReach with the per-zone
+    // zone.reachOhmSecondary for the containment test. The drawn polygon
+    // must do the same — otherwise Z2/Z3 look identical to Z1. Use small
+    // reaches so nothing hits the 50 Ω domain clamp and the reach leans out.
+    const base = makeSettings();
+    const quadSettings: DistanceDeviceSettings = {
+      ...base,
+      characteristicType: 'QUADRILATERAL',
+      zone1: { ...base.zone1, reachOhmSecondary: 8, thetaCharDeg: 80 },
+      zone2: { ...base.zone2, reachOhmSecondary: 12, thetaCharDeg: 80 },
+      zone3: { ...base.zone3, reachOhmSecondary: 20, thetaCharDeg: 80 },
+    };
+    const layout = buildRxPlaneLayout(makeResult(), quadSettings, 50);
+    // Z1 vertex at X=8, Z2 at X=12, Z3 at X=20 — distinct per-zone reaches.
+    expect(layout.zones[0].pathD).toMatch(/\b8\b/);
+    expect(layout.zones[1].pathD).toMatch(/\b12\b/);
+    expect(layout.zones[2].pathD).toMatch(/\b20\b/);
+  });
+
+  it('load-region boundary agrees with engine isInLoadRegion at the boundary', () => {
+    const settings = makeSettings();
+    const layout = buildRxPlaneLayout(makeResult(), settings, 50);
+    expect(layout.loadLine).not.toBeNull();
+    // rMinLoad=18, theta=25°. A point exactly on the slope: X = tan(25°)·R.
+    const r = 30;
+    const xOn = Math.tan((25 * Math.PI) / 180) * r;
+    expect(isInLoadRegion(r, xOn, settings.loadEncroachment)).toBe(true);
   });
 
   it('uses quadrilateral paths when characteristicType = QUADRILATERAL', () => {

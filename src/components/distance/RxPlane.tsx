@@ -64,17 +64,17 @@ function axes(halfOhm: number): JSX.Element {
     <g className='distance-rx-axes' aria-hidden='true'>
       <line x1={-R} y1={0} x2={R} y2={0} className='distance-rx-axis-r' />
       <line x1={0} y1={-X} x2={0} y2={X} className='distance-rx-axis-x' />
-      <text className='distance-rx-axis-label' x={R + 3} y='3' textAnchor='start'>
+      <text className='distance-rx-axis-label' x={R - 2} y='14' textAnchor='end'>
         R
       </text>
-      <text className='distance-rx-axis-label' x='4' y={-X - 3} textAnchor='start'>
+      <text className='distance-rx-axis-label' x='-2' y={-X + 6} textAnchor='end'>
         X
       </text>
       <Arrow x1={R} y1={0} x2={R - 4} y2={3} />
       <Arrow x1={R} y1={0} x2={R - 4} y2={-3} />
       <Arrow x1={0} y1={-X} x2={3} y2={-X + 4} />
       <Arrow x1={0} y1={-X} x2={-3} y2={-X + 4} />
-      <text className='distance-rx-axis-scale' x={-halfOhm} y={halfOhm + 16} textAnchor='start'>
+      <text className='distance-rx-axis-scale' x={-halfOhm} y={halfOhm - 4} textAnchor='start'>
         grid = 10 Ω
       </text>
       <text className='distance-rx-axis-scale' x={halfOhm} y='-6' textAnchor='end'>
