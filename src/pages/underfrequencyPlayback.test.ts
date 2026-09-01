@@ -204,26 +204,33 @@ describe('useUnderfrequencyPlayback dispatch model (no rAF, no DOM)', () => {
     expect(complete).toBeUndefined();
   });
 
-  it('sub-µs wall deltas do not stall the run via repeated no-op dispatch attempts', () => {
-    // Regression for the FP-rounding stall (documented in the playback hook
-    // reconciliation memory). When a frame's wallDeltaSec is so small that
-    // `current + wallDeltaSec * speed` rounds to exactly `current` in IEEE-754,
-    // shouldDispatchScrub returns false and no SET_SCRUB_TIME is emitted — but
-    // the next frame must still be able to advance. Six 1e-9 s deltas at
-    // speed 1 = 6e-9 s, which still rounds to 0 in double precision, so the
-    // first frame does NOT dispatch (next === current === null → not in the
-    // dispatch path either; shouldDispatchScrub(null, null) === false). Once a
-    // real delta arrives, the run resumes normally.
+  it('sub-µs wall deltas advance monotonically (no stall, no duplicate)', () => {
+    // Six 1e-9 s deltas at speed 1 accumulate to 6e-9 s, which is *not* exactly
+    // representable as a double — each frame produces a strictly different
+    // float, so every frame dispatches. The final 0.5 s delta lands the scrub
+    // near 0.5 (plus the 6e-9 s residue). The regression this pins is twofold:
+    //   (a) no stall: every frame makes forward progress, and
+    //   (b) no churn: no two consecutive dispatched values are equal.
     const dispatched = simulateRun({
       totalTimeSec: 100,
       simulationSpeed: 1,
       wallDeltaSecs: [1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 1e-9, 0.5],
     });
-    const scrubs = dispatched.filter((d) => d.type === 'SET_SCRUB_TIME').map((d) => d.timeSec);
-    // The first six sub-µs frames produce no dispatch (next rounds to current).
-    // The seventh frame (0.5s) is the first real advance: null → 0.5.
-    expect(scrubs).toEqual([0.5]);
-    // No COMPLETE: 0.5 < 100, run continues.
+    const scrubs = dispatched
+      .filter((d): d is { type: 'SET_SCRUB_TIME'; timeSec: number | null } =>
+        d.type === 'SET_SCRUB_TIME',
+      )
+      .map((d) => d.timeSec as number);
+    // One dispatch per frame: 6 sub-µs advances + the 0.5 s real advance.
+    expect(scrubs).toHaveLength(7);
+    // Strictly increasing: no frame stalled (gate never suppressed an
+    // otherwise-advancing frame).
+    for (let i = 1; i < scrubs.length; i += 1) {
+      expect(scrubs[i]).toBeGreaterThan(scrubs[i - 1]);
+    }
+    // Last frame's value is ≈ 0.5 (the sub-µs residue is negligible).
+    expect(scrubs[scrubs.length - 1]).toBeCloseTo(0.5, 6);
+    // No COMPLETE: total is 100 s, we're nowhere near it.
     expect(dispatched.find((d) => d.type === 'SET_PLAYBACK_STATE')).toBeUndefined();
   });
 });
